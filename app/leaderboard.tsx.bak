@@ -1,0 +1,69 @@
+// Backup of old leaderboard.tsx. You can safely delete this file if not needed.
+'use client';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+
+interface LeaderboardEntry {
+  id: string;
+  username: string;
+  score: number;
+  tournament_id: string;
+  tournament_title?: string;
+}
+
+export default function LeaderboardPage() {
+  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchLeaderboard = async () => {
+      // Join leaderboard with tournaments to get tournament title
+      const { data, error } = await supabase
+        .from('leaderboard')
+        .select('id, username, score, tournament_id, tournaments:title')
+        .order('score', { ascending: false });
+      if (data) {
+        setEntries(
+          data.map((entry: any) => ({
+            ...entry,
+            tournament_title: entry.tournaments?.title || '',
+          }))
+        );
+      }
+      setLoading(false);
+    };
+    fetchLeaderboard();
+  }, []);
+
+  return (
+    <main className="min-h-screen p-6 max-w-2xl mx-auto text-white">
+      <h1 className="text-3xl font-bold mb-6 text-orange-400">Global Leaderboard</h1>
+      {loading ? (
+        <p>Loading...</p>
+      ) : entries.length === 0 ? (
+        <p className="text-gray-400">No leaderboard entries yet.</p>
+      ) : (
+        <table className="w-full bg-[#222] rounded-xl overflow-hidden">
+          <thead>
+            <tr className="text-left bg-[#18181b]">
+              <th className="py-2 px-4">#</th>
+              <th className="py-2 px-4">Username</th>
+              <th className="py-2 px-4">Score</th>
+              <th className="py-2 px-4">Tournament</th>
+            </tr>
+          </thead>
+          <tbody>
+            {entries.map((entry, i) => (
+              <tr key={entry.id} className="border-t border-[#333]">
+                <td className="py-2 px-4">{i + 1}</td>
+                <td className="py-2 px-4">{entry.username}</td>
+                <td className="py-2 px-4">{entry.score}</td>
+                <td className="py-2 px-4">{entry.tournament_title}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </main>
+  );
+}
