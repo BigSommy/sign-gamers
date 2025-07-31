@@ -333,8 +333,8 @@ export default function TournamentDetailPage() {
                   {bracket.map((match, i) => {
                     // Helper to get registration info
                     const getReg = (username: string) => registrations.find(r => r.username === username);
-                    const p1 = getReg(match.player1.username) || { username: match.player1.username };
-                    const p2 = match.player2 ? (getReg(match.player2.username) || { username: match.player2.username }) : null;
+                    const p1 = getReg(match.player1.username) || { username: match.player1.username, game_id: undefined, x_handle: undefined };
+                    const p2 = match.player2 ? (getReg(match.player2.username) || { username: match.player2.username, game_id: undefined, x_handle: undefined }) : null;
                     return (
                       <li key={i} className="flex gap-4 items-center">
                         <span className="font-semibold flex items-center gap-1">
