@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from 'react';
-import { HomeIcon, TrophyIcon, ChartBarIcon, PencilSquareIcon, UserCircleIcon, UsersIcon, FilmIcon, NewspaperIcon, InformationCircleIcon, LightBulbIcon, HeartIcon, GameControllerIcon } from '@heroicons/react/24/solid';
+import { HomeIcon, TrophyIcon, ChartBarIcon, PencilSquareIcon, UserCircleIcon, UsersIcon, FilmIcon, NewspaperIcon, InformationCircleIcon, LightBulbIcon, HeartIcon } from '@heroicons/react/24/solid';
 
 type NavLinkProps = {
   href: string;
