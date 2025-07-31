@@ -51,7 +51,7 @@ export default function EditIdentity() {
       .eq('user_id', identityData.id);
     
     // Convert game IDs array to object
-    const gameIdsObj = {};
+    const gameIdsObj: Record<string, string> = {};
     if (gameIdsData) {
       gameIdsData.forEach(item => {
         gameIdsObj[item.game_id] = item.player_game_id;
