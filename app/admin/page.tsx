@@ -17,6 +17,7 @@ type Tournament = {
   banner_url: string | null
   register_link: string | null
   registration_deadline?: string | null
+  game_id: string;
 }
 
 type Registration = {
