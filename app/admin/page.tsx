@@ -65,7 +65,7 @@ export default function AdminPage() {
     const { error } = await supabase.from('tournaments').insert([{ ...form, status: 'upcoming', registration_deadline: deadline }])
     if (!error) {
       alert('Tournament added!')
-      setForm({ title: '', description: '', banner_url: '', logo_url: '', register_link: '', registration_deadline: '', game_id: '' })
+      setForm({ title: '', description: '', banner_url: '', register_link: '', registration_deadline: '', game_id: '' })
       loadTournaments()
     } else {
       alert('Error: ' + error.message)
