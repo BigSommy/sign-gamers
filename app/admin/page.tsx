@@ -124,7 +124,7 @@ export default function AdminPage() {
   }
 
   // Bracket management for tournaments
-  function BracketAdmin({ tournament }: { tournament: { id: string; title: string; status: string; registration_deadline?: string } }) {
+  function BracketAdmin({ tournament }: { tournament: { id: string; title: string; status: string;registration_deadline?: string | null } }) {
     const [registrations, setRegistrations] = useState<Registration[]>([]);
     const [bracket, setBracket] = useState<BracketMatch[]>([]);
     const [round, setRound] = useState(1);
