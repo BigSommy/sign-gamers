@@ -50,7 +50,7 @@ export default function TournamentRegister({ params }: { params: Params }) {
       setTournament(data);
       if (data && data.game_id) {
         const meta = games.find(g => g.id === data.game_id);
-        setGameMeta(meta || null);
+        setGameMeta(meta ? { ...meta, type: meta.type === "room" || meta.type === "pvp" ? meta.type : "room" } as GameMeta : null);
       }
     }
     fetchTournament();
