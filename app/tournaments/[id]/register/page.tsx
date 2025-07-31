@@ -1,7 +1,7 @@
 'use client';
 
 
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { games } from '@/app/gamesData';
@@ -44,7 +44,6 @@ export default function TournamentRegister({ params }: { params: Params }) {
   const [gameMeta, setGameMeta] = useState<GameMeta | null>(null);
 
   // Fetch tournament info
-  import React, { useEffect } from 'react';
   useEffect(() => {
     async function fetchTournament() {
       const { data } = await supabase.from('tournaments').select('*').eq('id', params.id).single();
