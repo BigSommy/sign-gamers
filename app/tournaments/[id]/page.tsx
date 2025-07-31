@@ -332,7 +332,7 @@ export default function TournamentDetailPage() {
                 <ul className="space-y-2">
                   {bracket.map((match, i) => {
                     // Helper to get registration info
-                    const getReg = (username) => registrations.find(r => r.username === username);
+                    const getReg = (username: string) => registrations.find(r => r.username === username);
                     const p1 = getReg(match.player1.username) || { username: match.player1.username };
                     const p2 = match.player2 ? (getReg(match.player2.username) || { username: match.player2.username }) : null;
                     return (
