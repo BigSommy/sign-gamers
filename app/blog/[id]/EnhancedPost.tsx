@@ -117,9 +117,9 @@ export default function EnhancedPost() {
       <div className="max-w-4xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
         <article className="relative">
           <header className="mb-12 text-center">
-            {post.tags?.length > 0 && (
+            {(post.tags?.length ?? 0) > 0 && (
               <div className="flex justify-center gap-2 mb-4">
-                {post.tags.map((tag) => (
+                {post.tags?.map((tag) => (
                   <span
                     key={tag}
                     className="inline-block px-3 py-1 text-xs font-medium text-orange-300 bg-orange-900/30 rounded-full"
