@@ -384,7 +384,7 @@ export default function AdminPage() {
               <p className="font-bold text-xl md:text-2xl text-orange-400 mb-1 font-['Exo_2']">{t.title}</p>
               <div className="flex flex-wrap gap-2 items-center mb-2">
                 <span className={`px-3 py-1 rounded-full text-xs font-bold ${t.status === 'upcoming' ? 'bg-orange-900 text-orange-300' : t.status === 'ongoing' ? 'bg-green-900 text-green-300' : 'bg-gray-700 text-gray-300'}`}>{t.status.toUpperCase()}</span>
-                <span className="text-xs text-gray-400">Deadline: <span className="text-orange-300 font-semibold">{formatUTCDate(t.registration_deadline)} (UTC+1)</span></span>
+                <span className="text-xs text-gray-400">Deadline: <span className="text-orange-300 font-semibold">{formatUTCDate(t.registration_deadline ?? null)} (UTC+1)</span></span>
                 <span className="text-xs text-gray-400">Game: <span className="text-orange-200 font-semibold">{t.game_id}</span></span>
               </div>
               <p className="text-sm text-gray-300 mb-2">{t.description}</p>
