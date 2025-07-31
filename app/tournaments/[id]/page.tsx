@@ -23,6 +23,7 @@ type Tournament = {
   register_link: string | null;
   created_at?: string;
   rules?: string | null;
+  game_id?: string;
 };
 
 interface Registration {
