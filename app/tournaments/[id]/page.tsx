@@ -12,6 +12,7 @@ interface LeaderboardEntry {
   username: string;
   score: number;
   tournament_id: string;
+  x_handle?: string;
 }
 
 type Tournament = {
