@@ -9,7 +9,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     <>
       <Header navOpen={navOpen} setNavOpen={setNavOpen} />
       <NavPanel navOpen={navOpen} setNavOpen={setNavOpen} />
-      <div className="pt-20 md:pt-24">{children}</div>
+      <div className="pt-2 md:pt-2">{children}</div>
     </>
   );
 }

@@ -22,7 +22,7 @@ export default function DonationPage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-[#18181b] via-[#1a1a22] to-[#23232b] flex flex-col items-center justify-center px-2 md:px-4 py-10">
-      <div className="w-full max-w-lg bg-[#18181b] rounded-2xl shadow-2xl border border-orange-900/30 p-6 md:p-10 flex flex-col items-center">
+      <div className="w-full max-w-lg bg-[#18181b] relative z-10 rounded-2xl shadow-2xl border border-orange-900/30 p-6 md:p-10 flex flex-col items-center">
         <h1 className="text-3xl font-bold text-orange-400 mb-4 text-center">Support the Cabal</h1>
         <p className="text-gray-300 text-center mb-6 text-base md:text-lg">
           If you love what we do and want to support Sign Gamers, you can donate any EVM-compatible token. All contributions help us grow the community, host events, and keep the vibes strong!

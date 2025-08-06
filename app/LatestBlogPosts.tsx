@@ -34,7 +34,7 @@ export default function LatestBlogPosts() {
       ) : (
         <div className="flex flex-col items-center gap-y-10 w-full">
           {posts.map((post) => (
-            <div key={post.id} className="bg-[#18181b] rounded-2xl shadow-xl border border-orange-900/20 p-8 flex flex-col items-center w-full max-w-2xl mx-auto">
+            <div key={post.id} className="bg-[#18181b] rounded-2xl shadow-xl border border-orange-800 p-8 flex flex-col items-center w-full max-w-2xl mx-auto">
               <div className="mb-4 rounded-lg overflow-hidden h-56 w-full bg-gray-800 flex items-center justify-center">
                 {post.cover_url ? (
                   <img src={post.cover_url} alt="Blog cover" className="object-cover w-full h-full" onError={e => (e.currentTarget.src = '/fallback.jpg')} />

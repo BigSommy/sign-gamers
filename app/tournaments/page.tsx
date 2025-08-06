@@ -51,7 +51,7 @@ export default function TournamentsPage() {
   }
 
   return (
-    <main className="min-h-screen p-6 max-w-3xl mx-auto text-white animate-fade-in">
+    <main className="min-h-screen p-6 max-w-3xl mx-auto text-white animate-fade-in relative z-0">
       <h1 className="text-3xl font-bold mb-6 text-orange-400 drop-shadow-lg transition-colors duration-200 hover:text-orange-300 cursor-pointer font-['Exo_2']">
         Tournaments
       </h1>
@@ -90,7 +90,7 @@ export default function TournamentsPage() {
                 {grouped.upcoming.map((t: Tournament) => (
                   <div
                     key={t.id}
-                    className="bg-[#222] p-4 rounded-xl flex flex-col md:flex-row md:items-center md:justify-between transition-transform duration-300 hover:scale-[1.02] hover:shadow-orange-500/30 group"
+                    className="bg-[#222] p-4 rounded-xl flex flex-col md:flex-row md:items-center md:justify-between transition-transform duration-300 hover:scale-[1.02] hover:shadow-orange-500/30 group relative z-10"
                   >
                     <div className="flex items-center gap-4">
                       {t.banner_url && (

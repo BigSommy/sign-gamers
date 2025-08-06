@@ -49,6 +49,33 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false);
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
+  // Show password form if not authed
+  if (!auth) {
+    return (
+      <main className="min-h-screen flex flex-col items-center justify-center bg-[#18181b] text-white">
+        <form
+          onSubmit={e => { e.preventDefault(); checkAuth(); }}
+          className="bg-[#222] p-8 rounded-2xl shadow-2xl flex flex-col items-center gap-4 border border-orange-400/30"
+        >
+          <h2 className="text-2xl font-bold text-orange-400 mb-2">Admin Login</h2>
+          <input
+            type="password"
+            value={passInput}
+            onChange={e => setPassInput(e.target.value)}
+            placeholder="Enter admin password"
+            className="px-4 py-2 rounded bg-[#18181b] border border-orange-400/40 text-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+          />
+          <button
+            type="submit"
+            className="super-btn bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg text-lg font-bold mt-2"
+          >
+            Login
+          </button>
+        </form>
+      </main>
+    );
+  }
+
   const loadTournaments = async () => {
     const { data } = await supabase.from('tournaments').select('*').order('created_at', { ascending: false })
     console.log('Fetched tournaments:', data)

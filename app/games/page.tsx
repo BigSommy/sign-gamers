@@ -85,7 +85,7 @@ export default function GamesPage() {
     <div className="min-h-screen bg-[#0a0a0a] text-white py-12 px-2 sm:px-4 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-extrabold text-orange-400 mb-4 font-['Exo_2']">
+          <h1 className="text-4xl font-extrabold relative z-10 text-orange-400 mb-4 font-['Exo_2']">
             Games by Fellow Signees
           </h1>
           <p className="text-lg text-gray-300 max-w-3xl mx-auto">

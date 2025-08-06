@@ -1,5 +1,7 @@
+
 import Image from 'next/image';
 import Link from 'next/link';
+import { withAOS } from '../lib/withAOS';
 
 type Game = {
   id: string;
@@ -15,9 +17,9 @@ type GameCardProps = {
   game: Game;
 };
 
-export function GameCard({ game }: GameCardProps) {
+function GameCard({ game }: GameCardProps) {
   return (
-    <div className="bg-[#1a1a1a] rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 border border-gray-800 hover:border-orange-500/50">
+    <div className="bg-[#1a1a1a] rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 border border-gray-800 hover:border-orange-500/50 relative z-10">
       <div className="relative h-48 w-full">
         <Image
           src={game.imageUrl}
@@ -27,12 +29,10 @@ export function GameCard({ game }: GameCardProps) {
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
         />
       </div>
-      
       <div className="p-6">
         <h3 className="text-xl font-bold text-white mb-2 font-['Exo_2']">
           {game.title}
         </h3>
-        
         <div className="flex items-center mb-3">
           <span className="text-sm text-gray-400">by </span>
           <a 
@@ -44,13 +44,11 @@ export function GameCard({ game }: GameCardProps) {
             @{game.creatorHandle}
           </a>
         </div>
-        
         {game.description && (
           <p className="text-gray-300 text-sm mb-4 line-clamp-2">
             {game.description}
           </p>
         )}
-        
         <div className="mt-4">
           <a
             href={game.playUrl}
@@ -79,3 +77,7 @@ export function GameCard({ game }: GameCardProps) {
     </div>
   );
 }
+
+const ExportedGameCard = withAOS(GameCard);
+export default ExportedGameCard;
+export { ExportedGameCard as GameCard };

@@ -106,3 +106,49 @@ html, body {
   transform: scale(1.06) translateY(-2px);
   box-shadow: 0 8px 32px 0 #fb923c66;
 }
+
+/* Neon border animation for cards */
+.animate-neon-border {
+  box-shadow: 0 0 24px 2px #f23900cc, 0 0 0 2px #f23900 inset;
+  animation: neonPulse 2s infinite alternate;
+}
+@keyframes neonPulse {
+  0% { box-shadow: 0 0 24px 2px #f23900cc, 0 0 0 2px #f23900 inset; }
+  100% { box-shadow: 0 0 40px 8px #f23900ee, 0 0 0 3px #f23900 inset; }
+}
+
+/* --- Animations for hero section video, particles, float, mouse --- */
+@keyframes zoom-slow {
+  0% { transform: scale(1.08); }
+  100% { transform: scale(1.16); }
+}
+.animate-zoom-slow {
+  animation: zoom-slow 18s linear infinite alternate;
+}
+
+@keyframes particle0 { 0%{transform:translateY(0);} 100%{transform:translateY(40px);} }
+@keyframes particle1 { 0%{transform:translateY(0);} 100%{transform:translateY(-30px);} }
+@keyframes particle2 { 0%{transform:translateY(0);} 100%{transform:translateY(25px);} }
+@keyframes particle3 { 0%{transform:translateY(0);} 100%{transform:translateY(-20px);} }
+@keyframes particle4 { 0%{transform:translateY(0);} 100%{transform:translateY(15px);} }
+@keyframes particle5 { 0%{transform:translateY(0);} 100%{transform:translateY(-10px);} }
+.animate-particle0 { animation: particle0 6s ease-in-out infinite alternate; }
+.animate-particle1 { animation: particle1 7s ease-in-out infinite alternate; }
+.animate-particle2 { animation: particle2 5s ease-in-out infinite alternate; }
+.animate-particle3 { animation: particle3 8s ease-in-out infinite alternate; }
+.animate-particle4 { animation: particle4 6.5s ease-in-out infinite alternate; }
+.animate-particle5 { animation: particle5 7.5s ease-in-out infinite alternate; }
+
+@keyframes float1 { 0%{transform:translateY(0);} 100%{transform:translateY(-18px);} }
+@keyframes float2 { 0%{transform:translateY(0);} 100%{transform:translateY(14px);} }
+@keyframes float3 { 0%{transform:translateY(0);} 100%{transform:translateY(-10px);} }
+@keyframes float4 { 0%{transform:translateY(0);} 100%{transform:translateY(12px);} }
+.animate-float1 { animation: float1 5.5s ease-in-out infinite alternate; }
+.animate-float2 { animation: float2 6.5s ease-in-out infinite alternate; }
+.animate-float3 { animation: float3 7s ease-in-out infinite alternate; }
+.animate-float4 { animation: float4 6s ease-in-out infinite alternate; }
+
+@keyframes mouse-bounce { 0%,100%{transform:translateY(0);} 50%{transform:translateY(10px);} }
+.animate-mouse-bounce { animation: mouse-bounce 1.6s infinite; }
+@keyframes mouse-scroll { 0%{opacity:1;transform:translateY(0);} 80%{opacity:0;transform:translateY(8px);} 100%{opacity:0;transform:translateY(8px);} }
+.animate-mouse-scroll { animation: mouse-scroll 1.6s infinite; }

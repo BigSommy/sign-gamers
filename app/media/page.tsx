@@ -29,7 +29,7 @@ export default function MediaGalleryPage() {
 	}, [tab]);
 
 	return (
-		<main className="min-h-screen p-4 md:p-6 bg-black text-white animate-fade-in">
+	<main className="min-h-screen p-4 md:p-6 text-white animate-fade-in relative z-0">
 			<h1 className="text-3xl font-bold mb-6 text-orange-400 text-center drop-shadow-lg transition-colors duration-200 hover:text-orange-300 cursor-pointer">
 				Media Gallery
 			</h1>
@@ -61,10 +61,10 @@ export default function MediaGalleryPage() {
 			) : (
 				<div className="grid grid-cols-2 md:grid-cols-3 gap-4 px-1 sm:px-2 md:px-4">
 					{media.map((item) => (
-						<div
-							key={item.id}
-							className="bg-gray-900 rounded-lg overflow-hidden shadow-lg flex flex-col transition-transform duration-300 hover:scale-[1.02] hover:shadow-orange-500/30 group"
-						>
+		<div
+		  key={item.id}
+		  className="bg-gray-900 rounded-lg overflow-hidden shadow-lg flex flex-col transition-transform duration-300 hover:scale-[1.02] hover:shadow-orange-500/30 group relative z-10"
+		>
 							{tab === "clip" ? (
 								<video
 									controls

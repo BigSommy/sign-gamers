@@ -293,7 +293,7 @@ export default function TournamentDetailPage() {
   if (!tournament) return <main className="min-h-screen p-6 text-white">Tournament not found.</main>;
 
   return (
-    <main className="min-h-screen p-6 max-w-2xl mx-auto text-white">
+    <main className="min-h-screen p-6 max-w-2xl mx-auto text-white bg-[#18181b] rounded-2xl shadow-2xl">
       {tournament.banner_url && (
         <img src={tournament.banner_url} alt="Banner" className="w-full h-56 object-cover rounded-xl mb-4" />
       )}
@@ -304,7 +304,7 @@ export default function TournamentDetailPage() {
         const gameMeta = games.find(g => g.id === tournament?.game_id);
         if (registrationTimeLeft !== 'Registration closed' && gameMeta?.type === 'pvp') {
           return (
-            <div className="mb-6 bg-[#222] p-4 rounded-xl">
+            <div className="mb-6 bg-[#18181b] relative z-10 p-4 rounded-xl shadow-lg">
               <h3 className="text-xl font-bold mb-2 text-orange-400 font-['Exo_2']">Registered Gamers</h3>
               {registrations.length === 0 ? (
                 <p className="text-gray-400">No one has registered yet.</p>
@@ -325,7 +325,7 @@ export default function TournamentDetailPage() {
         } else if (registrationTimeLeft === 'Registration closed') {
           // bracket logic
           return (
-            <div className="mb-6 bg-[#222] p-4 rounded-xl">
+            <div className="mb-6 bg-[#18181b] relative z-10 p-4 rounded-xl shadow-lg">
               <h3 className="text-xl font-bold mb-2 text-orange-400 font-['Exo_2']">Elimination Bracket</h3>
               {bracket.length === 0 ? (
                 <p className="text-gray-400">Bracket will be generated soon.</p>
@@ -386,154 +386,12 @@ export default function TournamentDetailPage() {
       )}
       {/* Show leaderboard only after bracket, not at the same time as bracket */}
       {registrationTimeLeft === 'Registration closed' && (
-        <div className="mb-8">
+        <div className="mb-8 bg-[#18181b] relative z-10 p-4 rounded-xl shadow-lg">
           <h2 className="text-2xl font-bold text-orange-400 mb-6 text-center font-['Exo_2']">Tournament Leaderboard</h2>
-          
-          {/* Enhanced Podium Card */}
-          {leaderboard.length > 0 && (
-            <div className="flex flex-col items-center mb-6">
-              <div id="podium-card" className="relative w-full max-w-xs h-52 sm:h-60 bg-gradient-to-br from-[#1a1a1a] to-[#0a0a0a] border border-orange-500/30 rounded-2xl shadow-xl p-1 sm:p-2 backdrop-blur-sm flex flex-col justify-between">
-                {/* Background Pattern */}
-                <div className="absolute inset-0 bg-[url('/grid-pattern.png')] opacity-10 rounded-xl"></div>
-                {/* Podium Title */}
-                <div className="text-center mb-1 relative z-10">
-                  <h3 className="text-base font-bold text-orange-400 font-['Exo_2']">TOURNAMENT CHAMPIONS</h3>
-                  {tournament && (
-                    <p className="text-xs text-gray-300 mt-0.5">{tournament.title}</p>
-                  )}
-                </div>
-                {/* Podium Places */}
-                <div className="flex flex-row justify-center items-end gap-1 md:gap-2 relative z-10 h-20 sm:h-24 w-full">
-                  {/* 2nd Place */}
-                  {leaderboard[1] && (
-                    <div className="flex-1 flex flex-col items-center justify-end transform transition-all duration-300 hover:scale-105 min-w-0">
-                      <div className="relative mb-2">
-                        <div className="absolute -inset-0.5 bg-gradient-to-r from-silver-500 to-gray-400 rounded-full blur opacity-40"></div>
-                        <div className="relative w-8 h-8 md:w-10 md:h-10 rounded-full border border-slate-400 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center overflow-hidden">
-                          <img 
-                            src={leaderboard[1].x_handle ? `/api/proxy-avatar?handle=${encodeURIComponent(leaderboard[1].x_handle.replace('@',''))}` : '/default-pfp.png'} 
-                            alt="2nd Place" 
-                            className="w-full h-full object-cover" 
-                            onError={e => { e.currentTarget.src = '/default-pfp.png'; }} 
-                          />
-                        </div>
-                      </div>
-                      <div className="text-center px-1">
-                        <div className="text-[10px] font-bold text-white mb-0.5 truncate max-w-[60px]">{leaderboard[1].username}</div>
-                        <div className="text-[9px] text-gray-300 mb-1">2nd</div>
-                        {leaderboard[1].x_handle && (
-                          <a 
-                            href={`https://x.com/${leaderboard[1].x_handle.replace('@','')}`} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="text-orange-400 hover:text-orange-300 transition-colors text-xs flex items-center justify-center gap-1"
-                          >
-                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                            </svg>
-                            {leaderboard[1].x_handle.replace('@','')}
-                          </a>
-                        )}
-                        <div className="mt-0.5 text-yellow-300 font-bold text-[10px]">{leaderboard[1].score} pts</div>
-                      </div>
-                      <div className="w-8 h-1 bg-gradient-to-r from-slate-500 to-slate-400 mt-1 rounded-b-lg"></div>
-                    </div>
-                  )}
-
-                  {/* 1st Place - Champion */}
-                  {leaderboard[0] && (
-                    <div className="flex-1 flex flex-col items-center justify-end transform transition-all duration-300 hover:scale-105 min-w-0">
-                      <div className="relative mb-2">
-                        <div className="absolute -inset-0.5 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-full blur opacity-40 animate-pulse"></div>
-                        <div className="relative w-10 h-10 md:w-12 md:h-12 rounded-full border-2 border-yellow-400 bg-gradient-to-br from-yellow-600 to-yellow-800 flex items-center justify-center overflow-hidden">
-                          <img 
-                            src={leaderboard[0].x_handle ? `/api/proxy-avatar?handle=${encodeURIComponent(leaderboard[0].x_handle.replace('@',''))}` : '/default-pfp.png'} 
-                            alt="1st Place" 
-                            className="w-full h-full object-cover" 
-                            onError={e => { e.currentTarget.src = '/default-pfp.png'; }} 
-                          />
-                        </div>
-                        <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-black text-[9px] font-bold px-1 py-0.5 rounded-full whitespace-nowrap">
-                          🏆 CHAMP
-                        </div>
-                      </div>
-                      <div className="text-center px-1">
-                        <div className="text-xs font-bold text-white mb-0.5 truncate max-w-[60px]">{leaderboard[0].username}</div>
-                        <div className="text-[10px] text-yellow-300 mb-1">1st</div>
-                        {leaderboard[0].x_handle && (
-                          <a 
-                            href={`https://x.com/${leaderboard[0].x_handle.replace('@','')}`} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="text-yellow-400 hover:text-yellow-300 transition-colors text-xs flex items-center justify-center gap-1"
-                          >
-                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                            </svg>
-                            {leaderboard[0].x_handle.replace('@','')}
-                          </a>
-                        )}
-                        <div className="mt-0.5 text-yellow-300 font-bold text-[10px]">{leaderboard[0].score} pts</div>
-                      </div>
-                      <div className="w-10 h-1 bg-gradient-to-r from-yellow-500 to-yellow-300 mt-1 rounded-b-lg"></div>
-                    </div>
-                  )}
-
-                  {/* 3rd Place */}
-                  {leaderboard[2] && (
-                    <div className="flex-1 flex flex-col items-center justify-end transform transition-all duration-300 hover:scale-105 min-w-0">
-                      <div className="relative mb-2">
-                        <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-600 to-amber-800 rounded-full blur opacity-40"></div>
-                        <div className="relative w-7 h-7 md:w-8 md:h-8 rounded-full border border-amber-600 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center overflow-hidden">
-                          <img 
-                            src={leaderboard[2].x_handle ? `/api/proxy-avatar?handle=${encodeURIComponent(leaderboard[2].x_handle.replace('@',''))}` : '/default-pfp.png'} 
-                            alt="3rd Place" 
-                            className="w-full h-full object-cover" 
-                            onError={e => { e.currentTarget.src = '/default-pfp.png'; }} 
-                          />
-                        </div>
-                      </div>
-                      <div className="text-center px-1">
-                        <div className="text-[10px] font-bold text-white mb-0.5 truncate max-w-[60px]">{leaderboard[2].username}</div>
-                        <div className="text-[9px] text-gray-300 mb-1">3rd</div>
-                        {leaderboard[2].x_handle && (
-                          <a 
-                            href={`https://x.com/${leaderboard[2].x_handle.replace('@','')}`} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="text-amber-400 hover:text-amber-300 transition-colors text-xs flex items-center justify-center gap-1"
-                          >
-                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                            </svg>
-                            {leaderboard[2].x_handle.replace('@','')}
-                          </a>
-                        )}
-                        <div className="mt-0.5 text-amber-300 font-bold text-[10px]">{leaderboard[2].score} pts</div>
-                      </div>
-                      <div className="w-7 h-1 bg-gradient-to-r from-amber-600 to-amber-800 mt-1 rounded-b-lg"></div>
-                    </div>
-                  )}
-                </div>
-              </div>
-              {/* Download Button OUTSIDE the podium card */}
-              <div className="flex justify-center mt-4">
-                <button 
-                  onClick={downloadPodium}
-                  className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-6 rounded-lg transition-all duration-200 transform hover:scale-105"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-                  </svg>
-                  Save Podium
-                </button>
-              </div>
-            </div>
-          )}
           {leaderboard.length === 0 ? (
             <p className="text-gray-400">No entries yet.</p>
           ) : (
-            <table className="w-full bg-[#222] rounded-xl overflow-hidden">
+            <table className="w-full bg-[#18181b] relative z-10 rounded-xl overflow-hidden">
               <thead>
                 <tr className="text-left bg-[#18181b]">
                   <th className="py-2 px-4">#</th>
@@ -542,9 +400,9 @@ export default function TournamentDetailPage() {
                 </tr>
               </thead>
               <tbody>
-                {leaderboard.slice(3).map((entry, i) => (
+                {leaderboard.map((entry, i) => (
                   <tr key={entry.id} className="border-t border-[#333]">
-                    <td className="py-2 px-4">{i + 4}</td>
+                    <td className="py-2 px-4">{i + 1}</td>
                     <td className="py-2 px-4">{entry.username}</td>
                     <td className="py-2 px-4">{entry.score}</td>
                   </tr>
@@ -555,7 +413,7 @@ export default function TournamentDetailPage() {
           {/* Loser SBT Card */}
           {loser && (
             <div className="mt-8 flex flex-col items-center">
-              <div id="loser-sbt-card" className="bg-gradient-to-br from-red-900 via-orange-900 to-black border-4 border-red-700 rounded-2xl shadow-2xl p-6 flex flex-col items-center max-w-xs animate-fade-in-up relative">
+              <div id="loser-sbt-card" className="bg-[#18181b] rounded-2xl shadow-2xl p-6 flex flex-col items-center max-w-xs animate-fade-in-up relative">
                 <button onClick={downloadLoser} title="Download Loser SBT" className="absolute top-2 right-2 p-1 rounded-full bg-red-500 hover:bg-red-600 text-white shadow flex items-center justify-center">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 6-6M12 18.75V3" />
@@ -575,7 +433,7 @@ export default function TournamentDetailPage() {
         const gameMeta = games.find(g => g.id === tournament.game_id);
         if (gameMeta && gameMeta.type === 'room') {
           return (
-            <div className="mb-6 bg-[#222] p-4 rounded-xl">
+            <div className="mb-6 bg-[#18181b] p-4 rounded-xl">
               <h3 className="text-lg font-semibold mb-2">Room Link / Code</h3>
               <p className="mb-2 text-orange-400">Registration closes in: {registrationTimeLeft}</p>
               {tournament.register_link ? (
@@ -614,7 +472,7 @@ export default function TournamentDetailPage() {
         }
         // Otherwise, show registration form for PvP games
         return (
-          <div className="mb-6 bg-[#222] p-4 rounded-xl">
+          <div className="mb-6 bg-[#18181b] p-4 rounded-xl shadow-lg">
             <h3 className="text-lg font-semibold mb-2">Register for this tournament</h3>
             <p className="mb-2 text-orange-400">Registration closes in: {registrationTimeLeft}</p>
             

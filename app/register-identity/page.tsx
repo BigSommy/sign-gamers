@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
+import BackgroundFX from '@/components/BackgroundFX'
+
 
 function generateSecretCode() {
   // Example: SGC-XXXX-XXXX
@@ -70,12 +72,13 @@ export default function RegisterIdentity() {
       toast.success('Identity registered!');
     }
   }
+  <BackgroundFX />
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#18181b] via-[#1a1a22] to-[#23232b] flex items-center justify-center px-2 md:px-4">
-      <div className="w-full max-w-xl mx-auto py-8 px-0 md:px-4">
+    <div className="min-h-screen flex items-center justify-center px-2 md:px-4 relative z-0">
+      <div className="w-full max-w-xl mx-auto py-8 px-0 md:px-4 relative z-10">
         <h1 className="text-2xl md:text-3xl font-bold text-orange-400 mb-6 text-center font-['Exo_2']">Register Your Player Identity</h1>
-        <form className="bg-[#18181b] rounded-xl shadow-xl p-4 md:p-6 flex flex-col gap-2 md:gap-4 w-full" onSubmit={handleSubmit}>
+        <form className="bg-[#18181b] rounded-xl shadow-xl p-4 md:p-6 flex flex-col gap-2 md:gap-4 w-full relative z-10" onSubmit={handleSubmit}>
           <input required type="text" placeholder="Username" className="px-4 py-3 rounded bg-black/40 text-white w-full text-base" value={form.username} onChange={e => setForm(f => ({ ...f, username: e.target.value }))} />
           <input required type="text" placeholder="X (Twitter) Handle" className="px-4 py-3 rounded bg-black/40 text-white w-full text-base" value={form.twitter} onChange={e => setForm(f => ({ ...f, twitter: e.target.value }))} />
           {/* Dynamically render game ID fields */}
@@ -92,7 +95,7 @@ export default function RegisterIdentity() {
           <button type="submit" disabled={loading} className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-lg mt-2 md:mt-4 transition-all text-base md:text-lg">{loading ? 'Registering...' : 'Register Identity'}</button>
         </form>
         {secret && (
-          <div className="mt-8 bg-black/60 rounded-xl p-4 md:p-6 text-center border border-orange-400">
+          <div className="mt-8 bg-black/60 rounded-xl p-4 md:p-6 text-center border border-orange-400 relative z-10">
             <h2 className="text-xl font-bold text-orange-400 mb-2 font-['Exo_2']">Your Secret Code</h2>
             <div className="text-xl md:text-2xl font-mono text-orange-300 mb-2">{secret}</div>
             <p className="text-gray-300 text-sm md:text-base">Save this code! You’ll need it to register for tournaments and edit your info.</p>

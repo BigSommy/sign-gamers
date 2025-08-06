@@ -120,10 +120,10 @@ export default function EditIdentity() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#18181b] via-[#1a1a22] to-[#23232b] flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center relative z-0">
       <div className="w-full max-w-xl mx-auto py-8 px-2 md:px-4">
         <h1 className="text-2xl md:text-3xl font-bold text-orange-400 mb-6 text-center font-['Exo_2']">Edit Your Player Identity</h1>
-      <form className="bg-[#18181b] rounded-xl shadow-xl p-6 flex flex-col gap-4 mb-6" onSubmit={handleFetch}>
+      <form className="bg-[#18181b] rounded-xl shadow-xl p-6 flex flex-col gap-4 mb-6 relative z-10" onSubmit={handleFetch}>
         <input 
           required 
           type="text" 
@@ -141,7 +141,7 @@ export default function EditIdentity() {
         </button>
       </form>
       {found && (
-        <form className="bg-[#18181b] rounded-xl shadow-xl p-6 flex flex-col gap-4" onSubmit={handleUpdate}>
+        <form className="bg-[#18181b] rounded-xl shadow-xl p-6 flex flex-col gap-4 relative z-10" onSubmit={handleUpdate}>
           <input 
             required 
             type="text" 
