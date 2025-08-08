@@ -306,13 +306,15 @@ export default function Home() {
           {games.map((game, idx) => (
             <motion.div
               key={game.id}
-              className="flex flex-col lg:flex-row rounded-2xl shadow-2xl border-2 border-orange-600 bg-[#18181b] overflow-hidden hover:shadow-orange-400/30 transition-all duration-300 max-w-full lg:max-w-3xl xl:max-w-4xl mx-auto min-h-[240px] lg:min-h-[240px] lg:h-[240px]"
-              style={{height: 'auto'}}
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{ duration: 0.6, delay: idx * 0.08, ease: 'easeOut' }}
-              whileHover={{ scale: 1.03, boxShadow: '0 0 32px 4px #f23900cc', borderColor: '#f23900' }}
+              {...{
+                className: "flex flex-col lg:flex-row rounded-2xl shadow-2xl border-2 border-orange-600 bg-[#18181b] overflow-hidden hover:shadow-orange-400/30 transition-all duration-300 max-w-full lg:max-w-3xl xl:max-w-4xl mx-auto min-h-[240px] lg:min-h-[240px] lg:h-[240px]",
+                style: { height: 'auto' },
+                initial: { opacity: 0, y: 40 },
+                whileInView: { opacity: 1, y: 0 },
+                viewport: { once: true, amount: 0.3 },
+                transition: { duration: 0.6, delay: idx * 0.08, ease: 'easeOut' },
+                whileHover: { scale: 1.03, boxShadow: '0 0 32px 4px #f23900cc', borderColor: '#f23900' }
+              }}
             >
               {/* Left Side: Content */}
               <div
