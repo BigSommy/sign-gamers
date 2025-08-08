@@ -9,19 +9,20 @@ export default function Header({ navOpen, setNavOpen }: { navOpen: boolean, setN
             <img src="/logo.png" alt="Sign Gamers Logo" className="h-9 w-9 md:h-11 border border-[#f23900] md:w-11 rounded-lg shadow" />
             <span className="text-lg md:text-2xl font-extrabold text-orange-400 drop-shadow font-['Exo_2']">Sign Gamers</span>
           </Link>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
             <a 
               href="https://x.com/signgamers" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 md:px-6 rounded-full text-sm md:text-base transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-orange-500/30"
+              className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-1 px-3 md:px-4 rounded-full text-xs md:text-sm transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-orange-500/30"
+              style={{ minWidth: 0 }}
             >
               JOIN US
             </a>
             {/* Menu button for nav panel */}
             <button
               aria-label="Open navigation"
-              className="ml-2 bg-orange-500 text-white p-2 rounded-full shadow-lg hover:bg-orange-600 transition-all duration-200 md:hidden"
+              className="ml-1 bg-orange-500 text-white p-2 rounded-full shadow-lg hover:bg-orange-600 transition-all duration-200 md:hidden"
               onClick={() => setNavOpen(true)}
               style={{ display: navOpen ? 'none' : 'block' }}
             >

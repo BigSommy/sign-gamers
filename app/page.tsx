@@ -60,7 +60,7 @@ function Tabs() {
             <div>
               <h3 className="text-lg font-bold text-orange-400 mb-1 font-['Exo_2']">Our Vision</h3>
               <p className="text-gray-200 text-base">
-                To become a prominent on-chain presence, hosting competitions with other communities. We aim to help gaming projects test their games, host IRL events, and bring together gamers from all over the world—both online and offline.
+                To become a prominent on-chain presence, hosting competitions with other communities. We aim to help gaming projects test their games, host IRL events, and bring together gamers from all over the world, both online and offline.
               </p>
             </div>
           </div>
@@ -72,7 +72,18 @@ function Tabs() {
 // ...rest of the page component code...
 
 export default function Home() {
-  const [showContent, setShowContent] = useState(false);
+  // Splash screen state
+  const [showSplash, setShowSplash] = useState(true);
+  const [splashFade, setSplashFade] = useState(false);
+  React.useEffect(() => {
+    // Start fade-out after 3.5s, remove after 4s
+    const fadeTimeout = setTimeout(() => setSplashFade(true), 3500);
+    const removeTimeout = setTimeout(() => setShowSplash(false), 4000);
+    return () => {
+      clearTimeout(fadeTimeout);
+      clearTimeout(removeTimeout);
+    };
+  }, []);
   const [faqOpen, setFaqOpen] = useState(false);
   type Tournament = {
     id: string;
@@ -135,71 +146,115 @@ export default function Home() {
 
   return (
     <>
-      {/* Global Animated Background */}
-      <BackgroundFX/>
-      {/* HERO SECTION: Animated, with video, overlay, animated words, CTAs, floating icons, featured tournament mini-card, scroll-down indicator */}
-      <section className="relative w-full min-h-[80vh] flex flex-col items-center justify-center overflow-hidden snap-start">
-        {/* Background Video */}
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover object-center z-0 opacity-80 pointer-events-none select-none"
-          src="/codm-bg1.mp4"
-        />
-        {/* Orange Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#f23900cc] via-transparent to-transparent z-10 pointer-events-none" />
-        {/* Floating Game Icons */}
-        <div className="absolute inset-0 z-20 pointer-events-none">
-          <FaTrophy className="absolute left-10 top-10 text-orange-400/80 text-4xl animate-float-slow" />
-          <FaGamepad className="absolute right-10 top-24 text-orange-300/70 text-3xl animate-float" />
-          <FaUser className="absolute left-1/4 bottom-16 text-orange-200/70 text-2xl animate-float-reverse" />
-        </div>
-        {/* Main Content */}
-        <div className="relative z-30 flex flex-col items-center justify-center pt-24 pb-16 px-4 text-center">
-          <img src="/logo.png" alt="Sign Gamers Logo" className="w-28 h-28 sm:w-40 sm:h-40 object-contain drop-shadow-[0_0_24px_#f23900bb] border border-[#f23900] mx-auto mb-4" draggable="false" />
-          <h1 className="text-2xl sm:text-3xl md:text-6xl font-semibold text-white mb-2 font-['Exo_2'] drop-shadow-lg">
-            <AnimatedWords
-              words={["Sign Gamers", "Play. Compete. Connect.", "On-chain Gaming", "Tournaments & Vibes"]}
-              className="inline-block text-orange-400"
-            />
-          </h1>
-          <p className="text-lg sm:text-2xl text-orange-100 font-semibold mb-6 max-w-2xl mx-auto drop-shadow">
-            Where gamers unite, compete, and vibe. All skill levels welcome. No toxicity, just pure gaming energy.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-            <Link href="#about" className="px-6 py-3 rounded-full bg-orange-500 hover:bg-orange-600 text-white font-bold text-lg shadow-lg transition-all duration-200">Learn More</Link>
-            <Link href="/tournaments" className="px-6 py-3 rounded-full bg-white/90 hover:bg-orange-100 text-orange-600 font-bold text-lg shadow-lg transition-all duration-200">Join a Tournament</Link>
+      {/* Splash Screen */}
+      {showSplash && (
+        <div
+          className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center w-screen h-screen bg-gradient-to-br from-[#f23900] via-[#ff7e1b] to-[#ffd6a0] transition-all duration-700 ${splashFade ? 'opacity-0 scale-95 pointer-events-none' : 'opacity-100 scale-100'}`}
+          style={{ minHeight: '100vh', minWidth: '100vw' }}
+        >
+          {/* Logo with pulse */}
+          <img
+            src="/logo.png"
+            alt="Sign Gamers Logo"
+            className="w-28 h-28 sm:w-40 sm:h-40 object-contain drop-shadow-[0_0_24px_#f23900bb] border-2 border-[#f23900] mb-6 animate-splash-pulse"
+            style={{ animation: 'splash-pulse 2.5s ease-in-out infinite' }}
+            draggable="false"
+          />
+          {/* Tagline with fade-in/slide-up */}
+          <div
+            className="text-white text-xl sm:text-2xl md:text-3xl font-bold tracking-widest font-['Exo_2'] text-center animate-splash-tagline"
+            style={{
+              animation: 'splash-tagline-fade 0.8s cubic-bezier(0.4,0,0.2,1) 0.5s both',
+              letterSpacing: '0.12em',
+              maxWidth: '90vw',
+              lineHeight: 1.2
+            }}
+          >
+            Play, Compete, Connect
           </div>
-          
-          {/* Scroll Down Indicator */}
-          <div className="flex flex-col items-center mt-4 animate-bounce">
-            <FaArrowDown className="text-orange-400 text-3xl" />
-            <span className="text-orange-200 text-xs mt-1">Scroll Down</span>
-          </div>
+          {/* Splash screen styles */}
+          <style>{`
+            @keyframes splash-pulse {
+              0% { transform: scale(1); }
+              50% { transform: scale(1.05); }
+              100% { transform: scale(1); }
+            }
+            @keyframes splash-tagline-fade {
+              0% { opacity: 0; transform: translateY(24px); }
+              100% { opacity: 1; transform: translateY(0); }
+            }
+          `}</style>
         </div>
-        <style>{`
-          @keyframes float {
-            0% { transform: translateY(0); }
-            50% { transform: translateY(-16px); }
-            100% { transform: translateY(0); }
-          }
-          @keyframes float-slow {
-            0% { transform: translateY(0); }
-            50% { transform: translateY(-24px); }
-            100% { transform: translateY(0); }
-          }
-          @keyframes float-reverse {
-            0% { transform: translateY(0); }
-            50% { transform: translateY(12px); }
-            100% { transform: translateY(0); }
-          }
-          .animate-float { animation: float 3s ease-in-out infinite; }
-          .animate-float-slow { animation: float-slow 5s ease-in-out infinite; }
-          .animate-float-reverse { animation: float-reverse 4s ease-in-out infinite; }
-        `}</style>
-      </section>
+      )}
+      {/* Main Content */}
+      <div className={showSplash ? 'pointer-events-none select-none' : ''} style={showSplash ? { filter: 'blur(2px)', userSelect: 'none' } : {}}>
+        {/* Global Animated Background */}
+        <BackgroundFX/>
+        {/* HERO SECTION: Animated, with video, overlay, animated words, CTAs, floating icons, featured tournament mini-card, scroll-down indicator */}
+        <section className="relative w-full min-h-[80vh] flex flex-col items-center justify-center overflow-hidden snap-start">
+          {/* Background Video */}
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover object-center z-0 opacity-80 pointer-events-none select-none"
+            src="/codm-bg1.mp4"
+          />
+          {/* Orange Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-br from-[#f23900cc] via-transparent to-transparent z-10 pointer-events-none" />
+          {/* Floating Game Icons */}
+          <div className="absolute inset-0 z-20 pointer-events-none">
+            <FaTrophy className="absolute left-10 top-10 text-orange-400/80 text-4xl animate-float-slow" />
+            <FaGamepad className="absolute right-10 top-24 text-orange-300/70 text-3xl animate-float" />
+            <FaUser className="absolute left-1/4 bottom-16 text-orange-200/70 text-2xl animate-float-reverse" />
+          </div>
+          {/* Main Content */}
+          <div className="relative z-30 flex flex-col items-center justify-center pt-24 pb-16 px-4 text-center">
+            <img src="/logo.png" alt="Sign Gamers Logo" className="w-28 h-28 sm:w-40 sm:h-40 object-contain drop-shadow-[0_0_24px_#f23900bb] border border-[#f23900] mx-auto mb-4" draggable="false" />
+            <h1 className="text-2xl sm:text-3xl md:text-6xl font-semibold text-white mb-2 font-['Exo_2'] drop-shadow-lg">
+              <AnimatedWords
+                words={["Sign Gamers", "Play. Compete. Connect.", "On-chain Gaming", "Tournaments & Vibes"]}
+                className="inline-block text-orange-400"
+              />
+            </h1>
+            <p className="text-lg sm:text-2xl text-orange-100 font-semibold mb-6 max-w-2xl mx-auto drop-shadow">
+              Where gamers unite, compete, and vibe. All skill levels welcome. No toxicity, just pure gaming energy.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+              <Link href="#about" className="px-6 py-3 rounded-full bg-orange-500 hover:bg-orange-600 text-white font-bold text-lg shadow-lg transition-all duration-200">Learn More</Link>
+              <Link href="/tournaments" className="px-6 py-3 rounded-full bg-white/90 hover:bg-orange-100 text-orange-600 font-bold text-lg shadow-lg transition-all duration-200">Join a Tournament</Link>
+            </div>
+            {/* Scroll Down Indicator */}
+            <div className="flex flex-col items-center mt-4 animate-bounce">
+              <FaArrowDown className="text-orange-400 text-3xl" />
+              <span className="text-orange-200 text-xs mt-1">Scroll Down</span>
+            </div>
+          </div>
+          <style>{`
+            @keyframes float {
+              0% { transform: translateY(0); }
+              50% { transform: translateY(-16px); }
+              100% { transform: translateY(0); }
+            }
+            @keyframes float-slow {
+              0% { transform: translateY(0); }
+              50% { transform: translateY(-24px); }
+              100% { transform: translateY(0); }
+            }
+            @keyframes float-reverse {
+              0% { transform: translateY(0); }
+              50% { transform: translateY(12px); }
+              100% { transform: translateY(0); }
+            }
+            .animate-float { animation: float 3s ease-in-out infinite; }
+            .animate-float-slow { animation: float-slow 5s ease-in-out infinite; }
+            .animate-float-reverse { animation: float-reverse 4s ease-in-out infinite; }
+          `}</style>
+        </section>
+        {/* ...existing code... */}
+        {/* The rest of the page remains unchanged */}
+      </div>
       <div
         className="w-full max-w-3xl mx-auto px-3 sm:px-6 py-20 sm:py-32 mb-20 sm:mb-28 fade-in relative min-h-[420px] snap-start"
         data-aos="fade-up" data-aos-delay="200" data-aos-duration="1000"
@@ -234,64 +289,80 @@ export default function Home() {
           </div>
         </motion.section>
       </div>
-        {/* Featured Tournament Carousel (moved below About) */}
-        <div className="w-full">
-          {loadingTournaments ? (
-            <div className="w-full flex items-center justify-center py-12">
-              <span className="text-orange-400 animate-pulse text-lg font-bold">Loading tournaments...</span>
-            </div>
-          ) : tournaments.length > 0 ? (
-            <FeaturedTournamentCarousel tournaments={tournaments} />
-          ) : null}
-        </div>
-        {/* Games We Play Section */}
-        <div
-          className="w-full max-w-5xl mx-auto px-3 sm:px-6 py-10 sm:py-20 mb-10 sm:mb-16 super-fade-in min-h-screen snap-start"
-          data-aos="fade-up" data-aos-duration="1000"
-        >
-          <motion.section
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.5 }}
-            transition={{ duration: 0.7, ease: 'easeOut' }}
-          >
-          <h2 className="text-lg sm:text-2xl md:text-4xl font-extrabold mb-6 sm:mb-10 text-orange-400 drop-shadow text-center font-['Exo_2'] super-fade-in">Games We Play</h2>
-          <div className="flex flex-col gap-6 sm:gap-6 md:gap-10 super-fade-in">
-            {games.map((game, idx) => (
-              <div
-                key={game.id}
-                className={`flex flex-col sm:flex-row items-stretch gap-0 sm:gap-0 rounded-2xl shadow-2xl border-2 border-orange-600 animate-border super-float overflow-hidden transition-transform duration-300 group max-w-xs sm:max-w-none mx-auto sm:mx-0`}
-                data-aos="fade-up" data-aos-duration="800" data-aos-delay={idx * 120}
-              >
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.96, y: 24 }}
-                  whileInView={{ opacity: 1, scale: 1, y: 0 }}
-                  whileHover={{ scale: 1.04, boxShadow: '0 0 32px 4px #f23900cc', borderColor: '#f23900' }}
-                  viewport={{ once: true, amount: 0.5 }}
-                  transition={{ duration: 0.5, ease: 'easeOut' }}
-                >
-                {/* Left: Logo, Title, Writeup */}
-                <div className="flex flex-col items-center justify-center bg-[#18181b] px-2 sm:p-6 w-full sm:w-1/2 min-w-0 super-fade-in">
-                  <img src={game.logo} alt={game.name + ' logo'} className="w-12 h-12 sm:w-16 sm:h-16 mb-2 object-contain rounded-lg border border-orange-400/30 super-fade-in" />
-                  <h3 className="text-base sm:text-lg font-bold text-orange-400 mb-1 drop-shadow font-['Exo_2'] super-fade-in truncate w-full text-center">{game.name}</h3>
-                  <p className="text-gray-200 mb-2 text-xs sm:text-sm text-center super-fade-in line-clamp-2">{game.description}</p>
-                  <ul className="flex flex-wrap gap-2  sm:gap-2 super-fade-in justify-center mt-1">
-                    {game.strengths.map((s, i) => (
-                      <li key={i} className="bg-[#f23900] text-white text-[10px] sm:text-xs px-2 sm:px-3 py-1 rounded-full font-semibold shadow-md border border-orange-200/40 super-fade-in" style={{textShadow: '0 1px 2px #b32a00'}}>{s}</li>
-                    ))}
-                  </ul>
-                </div>
-                {/* Right: Banner */}
-                <div className="relative w-full sm:w-1/2 aspect-[2.8/1] sm:aspect-[2.8/1] min-h-[120px] flex items-center justify-center overflow-hidden super-fade-in">
-                  <img src={game.banner} alt={game.name + ' banner'} className="w-full h-full object-cover object-center rounded-none opacity-95 scale-105 transition-transform duration-500 group-hover:scale-110 super-fade-in" />
-                  <div className="absolute inset-0 pointer-events-none super-fade-in" />
-                </div>
-                </motion.div>
-              </div>
-            ))}
+      {/* Featured Tournament Carousel (moved below About) */}
+      <div className="w-full">
+        {loadingTournaments ? (
+          <div className="w-full flex items-center justify-center py-12">
+            <span className="text-orange-400 animate-pulse text-lg font-bold">Loading tournaments...</span>
           </div>
-          </motion.section>
+        ) : tournaments.length > 0 ? (
+          <FeaturedTournamentCarousel tournaments={tournaments} />
+        ) : null}
+      </div>
+      {/* Games We Play Section */}
+      <section className="w-full max-w-6xl mx-auto px-3 sm:px-6 py-16 mb-16 min-h-screen snap-start">
+        <h2 className="text-2xl sm:text-4xl md:text-5xl font-extrabold mb-10 text-orange-400 drop-shadow text-center font-['Exo_2']">Games We Play</h2>
+        <div className="flex flex-col gap-8">
+          {games.map((game, idx) => (
+            <motion.div
+              key={game.id}
+              className="flex flex-col lg:flex-row rounded-2xl shadow-2xl border-2 border-orange-600 bg-[#18181b] overflow-hidden hover:shadow-orange-400/30 transition-all duration-300 max-w-full lg:max-w-3xl xl:max-w-4xl mx-auto min-h-[240px] lg:min-h-[240px] lg:h-[240px]"
+              style={{height: 'auto'}}
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.6, delay: idx * 0.08, ease: 'easeOut' }}
+              whileHover={{ scale: 1.03, boxShadow: '0 0 32px 4px #f23900cc', borderColor: '#f23900' }}
+            >
+              {/* Left Side: Content */}
+              <div
+                className="flex flex-col justify-center lg:items-start items-center px-4 py-6 lg:py-6 lg:px-6 gap-3 lg:gap-3 w-full lg:w-1/2 h-full"
+                style={{minHeight: 'inherit'}}
+              >
+                <div className="flex flex-col lg:flex-row lg:items-center items-center gap-2 w-full">
+                  <img
+                    src={game.logo}
+                    alt={game.name + ' logo'}
+                    className="w-12 h-12 sm:w-16 sm:h-16 lg:w-12 lg:h-12 object-contain rounded-lg border border-orange-400/30"
+                  />
+                  <h3 className="text-xl sm:text-2xl lg:text-2xl font-bold text-orange-400 drop-shadow font-['Exo_2'] lg:ml-3 text-center lg:text-left mt-2 lg:mt-0">
+                    {game.name}
+                  </h3>
+                </div>
+                <p
+                  className="text-gray-200/90 text-base sm:text-lg lg:text-base text-center lg:text-left mt-2 lg:mt-0"
+                  style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
+                >
+                  {game.description}
+                </p>
+                <ul className="flex flex-wrap gap-2 mt-2 lg:mt-0 w-full justify-center lg:justify-start">
+                  {game.strengths.map((s, i) => (
+                    <li
+                      key={i}
+                      className="bg-[#f23900] text-white text-xs sm:text-sm px-3 py-1 rounded-full font-semibold shadow-md border border-orange-200/40"
+                      style={{ textShadow: '0 1px 2px #b32a00' }}
+                    >
+                      {s}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              {/* Right Side: Banner Image */}
+              <div
+                className="flex items-center justify-center w-full lg:w-1/2 bg-black/10 relative aspect-[16/9] lg:aspect-[16/9] md:aspect-[16/9] sm:aspect-[4/3] h-full min-h-[140px] lg:min-h-0"
+                style={{minHeight: 'inherit'}}
+              >
+                <img
+                  src={game.banner}
+                  alt={game.name + ' banner'}
+                  className="w-full h-full object-cover object-center rounded-none opacity-95 transition-transform duration-500"
+                  style={{ borderRadius: 12 }}
+                />
+              </div>
+            </motion.div>
+          ))}
         </div>
+      </section>
 
         {/* THE FOUNDER & CO-FOUNDERS Section */}
         <div
@@ -312,9 +383,9 @@ export default function Home() {
           <div className="rounded-2xl shadow-2xl border-2 bg-[#18181b] border-orange-600 p-1 sm:p-2 flex flex-col items-center text-center min-w-0" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="0">
               <img src="https://unavatar.io/twitter/Queenfavy99" alt="QueenFavy" className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 rounded-full mb-1 sm:mb-2 md:mb-2 border-2 border-orange-400 object-cover super-fade-in" />
               <h3 className="text-xs sm:text-base md:text-lg font-bold text-orange-400 mb-1 font-['Exo_2'] super-fade-in">QueenFavy</h3>
-              <p className="text-[10px] sm:text-xs md:text-sm text-gray-400 mb-1 font-poppins super-fade-in">Founder</p>
+              <p className="text-[10px] sm:text-xs md:text-sm text-white sm:text-gray-400 mb-1 font-poppins super-fade-in">Founder</p>
               <a href="https://x.com/Queenfavy99" target="_blank" rel="noopener noreferrer" className="text-orange-400 underline text-[9px] sm:text-xs md:text-sm mb-1 sm:mb-2 super-fade-in">@Queenfavy99</a>
-              <p className="text-[9px] sm:text-xs md:text-sm text-gray-300 font-poppins super-fade-in">Community Builder & Chaos Queen of Sign</p>
+              <p className="text-[9px] sm:text-xs md:text-sm text-white sm:text-gray-300 font-poppins super-fade-in">Community Builder & Chaos Queen of Sign</p>
             </div>
             {/* Co-founders */}
             {[
@@ -327,9 +398,9 @@ export default function Home() {
             (<div key={c.handle} className="rounded-2xl bg-[#18181b] shadow-2xl border border-orange-600 p-1 sm:p-2 flex flex-col items-center text-center min-w-0 transition-transform duration-300 hover:scale-105" data-aos="fade-up" data-aos-duration="800" data-aos-delay={(1 + i) * 120}>
                 <img src={`https://unavatar.io/twitter/${c.handle}`} alt={c.name} className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 rounded-full mb-1 sm:mb-2 md:mb-2 border-2 border-orange-400 object-cover super-fade-in" />
                 <h3 className="text-xs sm:text-base md:text-lg font-bold text-orange-400 mb-1 font-['Exo_2'] super-fade-in">{c.name}</h3>
-                <p className="text-[9px] sm:text-xs md:text-gray-400 mb-1 super-fade-in">Co-founder</p>
+                <p className="text-[9px] sm:text-xs md:text-gray-400 mb-1 text-white sm:text-gray-400 super-fade-in">Co-founder</p>
                 <a href={`https://x.com/${c.handle}`} target="_blank" rel="noopener noreferrer" className="text-orange-400 underline text-[9px] sm:text-xs md:text-sm mb-1 sm:mb-2 super-fade-in">@{c.handle}</a>
-                <p className="text-[9px] sm:text-xs md:text-gray-300 super-fade-in">{c.desc}</p>
+                <p className="text-[9px] sm:text-xs md:text-gray-300 text-white sm:text-gray-300 super-fade-in">{c.desc}</p>
               </div>
             ))}
           </div>
@@ -362,9 +433,9 @@ export default function Home() {
             (<div key={c.handle} className="glass rounded-2xl shadow-2xl bg-[#18181b] border border-orange-600 p-1 sm:p-2 flex flex-col items-center text-center min-w-0 transition-transform duration-300 hover:scale-105" data-aos="fade-up" data-aos-duration="800" data-aos-delay={i * 120}>
                 <img src={`https://unavatar.io/twitter/${c.handle}`} alt={c.name} className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 rounded-full mb-1 sm:mb-2 md:mb-2 border-2 border-orange-400 object-cover super-fade-in" />
                 <h3 className="text-xs sm:text-base md:text-lg font-bold text-orange-400 mb-1 font-['Exo_2'] super-fade-in">{c.name}</h3>
-                <p className="text-[9px] sm:text-xs md:text-gray-400 mb-1 super-fade-in">{c.role}</p>
+                <p className="text-[9px] sm:text-xs md:text-gray-400 mb-1 text-white sm:text-gray-400 super-fade-in">{c.role}</p>
                 <a href={`https://x.com/${c.handle}`} target="_blank" rel="noopener noreferrer" className="text-orange-400 underline text-[9px] sm:text-xs md:text-sm mb-1 sm:mb-2 super-fade-in">@{c.handle}</a>
-                <p className="text-[9px] sm:text-xs md:text-gray-300 super-fade-in">{c.desc}</p>
+                <p className="text-[9px] sm:text-xs md:text-gray-300 text-white sm:text-gray-300 super-fade-in">{c.desc}</p>
               </div>
             ))}
             {/* Partners */}
@@ -372,15 +443,15 @@ export default function Home() {
               { name: 'Zenitsu', handle: 'RudraPr86747277', role: 'Partner', desc: 'Game Host, Support' },
               { name: 'Tino', handle: 'TinoNoEnemies', role: 'Partner', desc: 'Game Host, Gamer' },
               { name: 'Toby', handle: 'toby_sign', role: 'Partner', desc: 'Game Host, Gamer' },
-            ].map((c, i) => 
-            (<div key={c.handle} className="rounded-2xl shadow-2xl bg-[#18181b] border border-orange-600 p-2 sm:p-4 flex flex-col items-center text-center transition-transform duration-300 hover:scale-105" data-aos="fade-up" data-aos-duration="800" data-aos-delay={i * 120}>
-                <img src={`https://unavatar.io/twitter/${c.handle}`} alt={c.name} className="w-12 h-12 sm:w-16 sm:h-16 md:w-24 md:h-24 rounded-full mb-1 sm:mb-2 md:mb-3 border-2 border-orange-400 object-cover super-fade-in" />
+            ].map((c, i) =>
+              (<div key={c.handle} className="rounded-2xl shadow-2xl bg-[#18181b] border border-orange-600 p-2 sm:p-4 flex flex-col items-center text-center transition-transform duration-300 hover:scale-105" data-aos="fade-up" data-aos-duration="800" data-aos-delay={i * 120}>
+                <img src={`https://unavatar.io/twitter/${c.handle}`} alt={c.name} className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 rounded-full mb-1 sm:mb-2 md:mb-2 border-2 border-orange-400 object-cover super-fade-in" />
                 <h3 className="text-base sm:text-lg md:text-2xl font-bold text-orange-400 mb-1 font-['Exo_2'] super-fade-in">{c.name}</h3>
-                <p className="text-[10px] sm:text-xs md:text-gray-400 mb-1 super-fade-in">{c.role}</p>
+                <p className="text-[10px] sm:text-xs md:text-gray-400 mb-1 text-white sm:text-gray-400 super-fade-in">{c.role}</p>
                 <a href={`https://x.com/${c.handle}`} target="_blank" rel="noopener noreferrer" className="text-orange-400 underline text-[10px] sm:text-xs md:text-base mb-1 sm:mb-2 super-fade-in">@{c.handle}</a>
-                <p className="text-[10px] sm:text-xs md:text-gray-300 super-fade-in">{c.desc}</p>
-              </div>
-            ))}
+                <p className="text-[10px] sm:text-xs md:text-gray-300 text-white sm:text-gray-300 super-fade-in">{c.desc}</p>
+              </div>)
+            )}
           </div>
           </motion.section>
         </div>
@@ -450,7 +521,7 @@ export default function Home() {
                 <div className="space-y-2">
                   <details className="bg-[#111827] rounded-lg p-2">
                     <summary className="cursor-pointer font-semibold text-orange-300">What is Sign Gamers?</summary>
-                    <div className="mt-1 text-sm text-gray-100">Sign Gamers is a chill, inclusive gaming community for everyone—casuals, pros, and all in between. We host games, tournaments, and more!</div>
+                    <div className="mt-1 text-sm text-gray-100">Sign Gamers is a chill, inclusive gaming community for everyone, casuals, pros, and all in between. We host games, tournaments, and more!</div>
                   </details>
                   <details className="bg-[#111827] rounded-lg p-2">
                     <summary className="cursor-pointer font-semibold text-orange-300">How do I join tournaments?</summary>
@@ -462,11 +533,11 @@ export default function Home() {
                   </details>
                   <details className="bg-[#111827] rounded-lg p-2">
                     <summary className="cursor-pointer font-semibold text-orange-300">Where can I get support?</summary>
-                    <div className="mt-1 text-sm text-gray-100">Hop into our Discord or DM us on Twitter/X for Help, uestions, Partnerships, Collaborations, or just to say hi!</div>
+                    <div className="mt-1 text-sm text-gray-100">Hop into our Discord or DM us on Twitter/X for Help, Questions, Partnerships, Collaborations, or just to say hi!</div>
                   </details>
                   <details className="bg-[#111827] rounded-lg p-2">
                     <summary className="cursor-pointer font-semibold text-orange-300">How to Get the Uniue Code?</summary>
-                    <div className="mt-1 text-sm text-gray-100">Just click on the "Register Game IDs", then submit your X handle and Game ID for the games you play. You will recieve a code afterwards. This code will be used to EDIT your GAME DATA in the future and to register for tournaments. This wil only be used for tournaments with 1v1 matches</div>
+                    <div className="mt-1 text-sm text-gray-100">Just click on the "Register Game IDs", then submit your X handle and Game ID for the games you play. You will recieve a code afterwards. This code will be used to EDIT your GAME DATA in the future and to register for tournaments. This will only be used for tournaments with 1v1 matches</div>
                   </details>
                 </div>
               </motion.div>

@@ -33,21 +33,69 @@ type BracketMatch = {
   winner: string | null;
 };
 
+
 export default function AdminPage() {
-  const [auth, setAuth] = useState(false)
-  const [passInput, setPassInput] = useState('')
-  const [tournaments, setTournaments] = useState<Tournament[]>([])
+  // All hooks and functions must be at the top, before any return
+  const [auth, setAuth] = useState(false);
+  const [passInput, setPassInput] = useState('');
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [form, setForm] = useState({
     title: '',
     description: '',
     status: 'upcoming',
     banner_url: '',
     register_link: '',
-    registration_deadline: '', // new field
-    game_id: '', // new field for game selection
-  })
+    registration_deadline: '',
+    game_id: '',
+  });
   const [loading, setLoading] = useState(false);
   const bannerInputRef = useRef<HTMLInputElement>(null);
+
+  // Define loadTournaments before useEffect uses it
+  const loadTournaments = async () => {
+    const { data } = await supabase.from('tournaments').select('*').order('created_at', { ascending: false });
+    console.log('Fetched tournaments:', data);
+    setTournaments(data || []);
+  };
+
+
+  // All hooks must be at the top, before any return
+  useEffect(() => {
+    const storedAuth = localStorage.getItem('sg_admin_auth');
+    if (storedAuth === 'true') setAuth(true);
+  }, []);
+
+  useEffect(() => {
+    loadTournaments();
+  }, []);
+
+  useEffect(() => {
+    if (auth) loadTournaments();
+  }, [auth]);
+
+  useEffect(() => {
+    localStorage.setItem('sg_admin_auth', auth ? 'true' : 'false');
+  }, [auth]);
+
+  // Secure password check via API
+  const checkAuth = async () => {
+    try {
+      const res = await fetch('/api/admin-auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: passInput })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAuth(true);
+        localStorage.setItem('sg_admin_auth', 'true');
+      } else {
+        alert('Wrong password');
+      }
+    } catch (err) {
+      alert('Error connecting to server.');
+    }
+  }
 
   // Show password form if not authed
   if (!auth) {
@@ -76,11 +124,7 @@ export default function AdminPage() {
     );
   }
 
-  const loadTournaments = async () => {
-    const { data } = await supabase.from('tournaments').select('*').order('created_at', { ascending: false })
-    console.log('Fetched tournaments:', data)
-    setTournaments(data || [])
-  }
+
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -122,33 +166,8 @@ export default function AdminPage() {
     setForm({ ...form, banner_url: urlData.publicUrl });
   };
 
-  useEffect(() => {
-    if (auth) loadTournaments();
-  }, [auth]);
 
-  // Always load tournaments on mount, regardless of auth
-  useEffect(() => {
-    loadTournaments();
-  }, []);
 
-  // Persist admin auth in localStorage
-  useEffect(() => {
-    const storedAuth = localStorage.getItem('sg_admin_auth');
-    if (storedAuth === 'true') setAuth(true);
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('sg_admin_auth', auth ? 'true' : 'false');
-  }, [auth]);
-
-  const checkAuth = () => {
-    if (passInput === process.env.NEXT_PUBLIC_ADMIN_PASSWORD) {
-      setAuth(true);
-      localStorage.setItem('sg_admin_auth', 'true');
-    } else {
-      alert('Wrong password');
-    }
-  }
 
   // Bracket management for tournaments
   function BracketAdmin({ tournament }: { tournament: { id: string; title: string; status: string;registration_deadline?: string | null } }) {

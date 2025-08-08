@@ -18,18 +18,32 @@ interface FeaturedTournamentCarouselProps {
   tournaments: Tournament[];
 }
 
+
 const CARD_WIDTH = 340; // px
 const CARD_GAP = 20; // px
 const AUTO_SCROLL_INTERVAL = 5000; // ms
 
 export default function FeaturedTournamentCarousel({ tournaments }: FeaturedTournamentCarouselProps) {
   const [current, setCurrent] = useState(0);
+  const [cardsPerView, setCardsPerView] = useState(3);
   const scrollRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Responsive cards per view
+  useEffect(() => {
+    function handleResize() {
+      if (window.innerWidth < 640) setCardsPerView(1);
+      else if (window.innerWidth < 1024) setCardsPerView(2);
+      else setCardsPerView(3);
+    }
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Auto-scroll
   useEffect(() => {
-    if (tournaments.length <= 1) return;
+    if (tournaments.length <= cardsPerView) return;
     timerRef.current = setInterval(() => {
       setCurrent((prev) => (prev + 1) % tournaments.length);
     }, AUTO_SCROLL_INTERVAL);
@@ -38,7 +52,7 @@ export default function FeaturedTournamentCarousel({ tournaments }: FeaturedTour
         clearInterval(timerRef.current);
       }
     };
-  }, [tournaments.length]);
+  }, [tournaments.length, cardsPerView]);
 
   // Snap to card on current change
   useEffect(() => {
@@ -57,17 +71,29 @@ export default function FeaturedTournamentCarousel({ tournaments }: FeaturedTour
     if (timerRef.current) clearInterval(timerRef.current);
   };
 
-  // Responsive cards per view
-  const getCardsPerView = () => {
-    if (typeof window === "undefined") return 1;
-    if (window.innerWidth < 640) return 1;
-    if (window.innerWidth < 1024) return 2;
-    return 3;
-  };
-
   // Truncate description
   const truncate = (str: string, n: number) =>
     str.length > n ? str.slice(0, n - 1) + "..." : str;
+
+  // Only show the visible cards for the current view
+  const getVisibleTournaments = () => {
+    if (cardsPerView === 1) {
+      return tournaments.slice(current, current + 1);
+    } else if (cardsPerView === 2) {
+      if (current === tournaments.length - 1) {
+        return [tournaments[current], tournaments[0]];
+      }
+      return tournaments.slice(current, current + 2);
+    } else {
+      // 3 or more
+      if (current === tournaments.length - 2) {
+        return [tournaments[current], tournaments[current + 1], tournaments[0]];
+      } else if (current === tournaments.length - 1) {
+        return [tournaments[current], tournaments[0], tournaments[1]];
+      }
+      return tournaments.slice(current, current + 3);
+    }
+  };
 
   return (
     <section className="w-full max-w-6xl mx-auto px-2 sm:px-4 mb-12">
@@ -97,10 +123,10 @@ export default function FeaturedTournamentCarousel({ tournaments }: FeaturedTour
         className="flex overflow-x-auto no-scrollbar snap-x snap-mandatory gap-5 pb-4"
         style={{ scrollBehavior: "smooth" }}
       >
-        {tournaments.map((t, idx) => (
+        {getVisibleTournaments().map((t, idx) => (
           <div
             key={t.id}
-            className={`min-w-[${CARD_WIDTH}px] max-w-[${CARD_WIDTH}px] snap-center bg-[#23232a]/80 backdrop-blur-md rounded-2xl shadow-2xl border border-orange-500/30 flex flex-col transition-transform duration-300 ${idx === current ? "scale-100" : "scale-95 opacity-80"}`}
+            className={`min-w-[${CARD_WIDTH}px] max-w-[${CARD_WIDTH}px] snap-center bg-[#23232a]/80 backdrop-blur-md rounded-2xl shadow-2xl border border-orange-500/30 flex flex-col transition-transform duration-300 ${idx === 0 ? "scale-100" : "scale-95 opacity-80"}`}
             style={{ width: CARD_WIDTH, marginRight: CARD_GAP }}
           >
             {t.banner_url && (
