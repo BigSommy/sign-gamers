@@ -72,18 +72,6 @@ function Tabs() {
 // ...rest of the page component code...
 
 export default function Home() {
-  // Splash screen state
-  const [showSplash, setShowSplash] = useState(true);
-  const [splashFade, setSplashFade] = useState(false);
-  React.useEffect(() => {
-    // Start fade-out after 3.5s, remove after 4s
-    const fadeTimeout = setTimeout(() => setSplashFade(true), 3500);
-    const removeTimeout = setTimeout(() => setShowSplash(false), 4000);
-    return () => {
-      clearTimeout(fadeTimeout);
-      clearTimeout(removeTimeout);
-    };
-  }, []);
   const [faqOpen, setFaqOpen] = useState(false);
   type Tournament = {
     id: string;
@@ -146,52 +134,12 @@ export default function Home() {
 
   return (
     <>
-      {/* Splash Screen */}
-      {showSplash && (
-        <div
-          className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center w-screen h-screen bg-gradient-to-br from-[#f23900] via-[#ff7e1b] to-[#ffd6a0] transition-all duration-700 ${splashFade ? 'opacity-0 scale-95 pointer-events-none' : 'opacity-100 scale-100'}`}
-          style={{ minHeight: '100vh', minWidth: '100vw' }}
-        >
-          {/* Logo with pulse */}
-          <img
-            src="/logo.png"
-            alt="Sign Gamers Logo"
-            className="w-28 h-28 sm:w-40 sm:h-40 object-contain drop-shadow-[0_0_24px_#f23900bb] border-2 border-[#f23900] mb-6 animate-splash-pulse"
-            style={{ animation: 'splash-pulse 2.5s ease-in-out infinite' }}
-            draggable="false"
-          />
-          {/* Tagline with fade-in/slide-up */}
-          <div
-            className="text-white text-xl sm:text-2xl md:text-3xl font-bold tracking-widest font-['Exo_2'] text-center animate-splash-tagline"
-            style={{
-              animation: 'splash-tagline-fade 0.8s cubic-bezier(0.4,0,0.2,1) 0.5s both',
-              letterSpacing: '0.12em',
-              maxWidth: '90vw',
-              lineHeight: 1.2
-            }}
-          >
-            Play, Compete, Connect
-          </div>
-          {/* Splash screen styles */}
-          <style>{`
-            @keyframes splash-pulse {
-              0% { transform: scale(1); }
-              50% { transform: scale(1.05); }
-              100% { transform: scale(1); }
-            }
-            @keyframes splash-tagline-fade {
-              0% { opacity: 0; transform: translateY(24px); }
-              100% { opacity: 1; transform: translateY(0); }
-            }
-          `}</style>
-        </div>
-      )}
       {/* Main Content */}
-      <div className={showSplash ? 'pointer-events-none select-none' : ''} style={showSplash ? { filter: 'blur(2px)', userSelect: 'none' } : {}}>
+      <div>
         {/* Global Animated Background */}
         <BackgroundFX/>
         {/* HERO SECTION: Animated, with video, overlay, animated words, CTAs, floating icons, featured tournament mini-card, scroll-down indicator */}
-        <section className="relative w-full min-h-[80vh] flex flex-col items-center justify-center overflow-hidden snap-start">
+        <section className="relative w-full min-h-[80vh] flex flex-col items-center justify-center overflow-hidden">
           {/* Background Video */}
           <video
             autoPlay
@@ -256,7 +204,7 @@ export default function Home() {
         {/* The rest of the page remains unchanged */}
       </div>
       <div
-        className="w-full max-w-3xl mx-auto px-3 sm:px-6 py-20 sm:py-32 mb-20 sm:mb-28 fade-in relative min-h-[420px] snap-start"
+        className="w-full max-w-3xl mx-auto px-3 sm:px-6 py-20 sm:py-32 mb-20 sm:mb-28 fade-in relative min-h-[420px]"
         data-aos="fade-up" data-aos-delay="200" data-aos-duration="1000"
       >
         <motion.section
@@ -300,14 +248,14 @@ export default function Home() {
         ) : null}
       </div>
       {/* Games We Play Section */}
-      <section className="w-full max-w-6xl mx-auto px-3 sm:px-6 py-16 mb-16 min-h-screen snap-start">
+      <section className="w-full max-w-6xl mx-auto px-6 py-12 mb-12 min-h-screen">
         <h2 className="text-2xl sm:text-4xl md:text-5xl font-extrabold mb-10 text-orange-400 drop-shadow text-center font-['Exo_2']">Games We Play</h2>
         <div className="flex flex-col gap-8">
           {games.map((game, idx) => (
             <motion.div
               key={game.id}
               {...{
-                className: "flex flex-col lg:flex-row rounded-2xl shadow-2xl border-2 border-orange-600 bg-[#18181b] overflow-hidden hover:shadow-orange-400/30 transition-all duration-300 max-w-full lg:max-w-3xl xl:max-w-4xl mx-auto min-h-[240px] lg:min-h-[240px] lg:h-[240px]",
+                className: "flex flex-col md:flex-row rounded-2xl shadow-2xl border-2 border-orange-600 bg-[#18181b] overflow-hidden hover:shadow-orange-400/30 transition-all duration-300 max-w-full md:max-w-3xl xl:max-w-4xl mx-auto min-h-[160px] md:min-h-[240px] md:h-[240px]",
                 style: { height: 'auto' },
                 initial: { opacity: 0, y: 40 },
                 whileInView: { opacity: 1, y: 0 },
@@ -318,16 +266,16 @@ export default function Home() {
             >
               {/* Left Side: Content */}
               <div
-                className="flex flex-col justify-center lg:items-start items-center px-4 py-6 lg:py-6 lg:px-6 gap-3 lg:gap-3 w-full lg:w-1/2 h-full"
+                className="flex flex-col justify-center md:items-start items-center px-3 py-4 md:py-6 md:px-6 gap-2 md:gap-3 w-full md:w-1/2 h-full"
                 style={{minHeight: 'inherit'}}
               >
-                <div className="flex flex-col lg:flex-row lg:items-center items-center gap-2 w-full">
+                <div className="flex flex-col md:flex-row md:items-center items-center gap-2 w-full">
                   <img
                     src={game.logo}
                     alt={game.name + ' logo'}
-                    className="w-12 h-12 sm:w-16 sm:h-16 lg:w-12 lg:h-12 object-contain rounded-lg border border-orange-400/30"
+                    className="w-12 h-12 sm:w-16 sm:h-16 md:w-12 md:h-12 object-contain rounded-lg border border-orange-400/30"
                   />
-                  <h3 className="text-xl sm:text-2xl lg:text-2xl font-bold text-orange-400 drop-shadow font-['Exo_2'] lg:ml-3 text-center lg:text-left mt-2 lg:mt-0">
+                  <h3 className="text-xl sm:text-2xl md:text-2xl font-bold text-orange-400 drop-shadow font-['Exo_2'] md:ml-3 text-center md:text-left mt-2 md:mt-0">
                     {game.name}
                   </h3>
                 </div>
@@ -351,7 +299,7 @@ export default function Home() {
               </div>
               {/* Right Side: Banner Image */}
               <div
-                className="flex items-center justify-center w-full lg:w-1/2 bg-black/10 relative aspect-[16/9] lg:aspect-[16/9] md:aspect-[16/9] sm:aspect-[4/3] h-full min-h-[140px] lg:min-h-0"
+                className="flex items-center justify-center w-full md:w-1/2 bg-black/10 relative aspect-[16/9] md:aspect-[16/9] sm:aspect-[4/3] h-full min-h-[140px] md:min-h-0"
                 style={{minHeight: 'inherit'}}
               >
                 <img
@@ -368,7 +316,7 @@ export default function Home() {
 
         {/* THE FOUNDER & CO-FOUNDERS Section */}
         <div
-          className="w-full max-w-5xl mx-auto px-3 sm:px-6 py-8 sm:py-16 mb-6 sm:mb-10 super-fade-in min-h-screen snap-start"
+          className="w-full max-w-5xl mx-auto px-6 py-6 mb-6 super-fade-in min-h-[400px]"
           data-aos="fade-up" data-aos-duration="1000"
         >
           <motion.section
@@ -411,7 +359,7 @@ export default function Home() {
 
         {/* CORE CONTRIBUTORS Section */}
         <div
-          className="w-full max-w-5xl mx-auto px-3 sm:px-6 py-8 sm:py-16 mb-6 sm:mb-10 super-fade-in min-h-screen snap-start"
+          className="w-full max-w-5xl mx-auto px-6 py-6 mb-6 super-fade-in min-h-[400px]"
           data-aos="fade-up" data-aos-duration="1000"
         >
           <motion.section
@@ -460,7 +408,7 @@ export default function Home() {
 
         {/* Latest from the Cabal Section */}
         <div
-          className="w-full max-w-5xl mx-auto px-3 sm:px-6 py-8 sm:py-16 mb-8 sm:mb-12 super-fade-in min-h-screen snap-start"
+          className="w-full max-w-5xl mx-auto px-6 py-6 mb-6 super-fade-in min-h-[400px]"
         >
           <motion.section
             initial={{ opacity: 0, y: 40 }}
@@ -473,7 +421,7 @@ export default function Home() {
         </div>
         {/* Latest Media Section */}
         <div
-          className="w-full max-w-5xl mx-auto px-3 sm:px-6 py-8 sm:py-16 mb-8 sm:mb-12 super-fade-in min-h-screen snap-start"
+          className="w-full max-w-5xl mx-auto px-6 py-12 mb-12 super-fade-in min-h-screen"
         >
           <motion.section
             initial={{ opacity: 0, y: 40 }}
