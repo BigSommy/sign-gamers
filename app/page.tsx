@@ -339,10 +339,10 @@ export default function Home() {
             </div>
             {/* Co-founders */}
             {[
-              { name: 'Pain', handle: '0xxpain', desc: 'The Chess Titan, Game Host' },
-              { name: '333', handle: 'cherrynotyours', desc: 'Intern, Game Host, Sign Sentinel' },
+              { name: 'Pain', handle: '0xxpain', desc: 'Game Master, Chess Titan, Game Host' },
+              { name: '333', handle: 'cherrynotyours', desc: 'Intern, Space Host, Sign Sentinel' },
               { name: 'Zoe', handle: 'xoxo_zoe3', desc: 'Intern, Nano-baddie' },
-              { name: 'MASHA', handle: 'whatyougondo43', desc: 'Chaos, Vibes & other Potato stuff' },
+              { name: 'MASHA', handle: 'whatyougondo43', desc: 'Space Host, Chaos, Vibes & other Potato stuff' },
               { name: 'FransTp', handle: 'FransTp0', desc: 'Game Streaming, Support, what more could be asked of a superhero' },
             ].map((c, i) =>
             (<div key={c.handle} className="rounded-2xl bg-[#18181b] shadow-2xl border border-orange-600 p-1 sm:p-2 flex flex-col items-center text-center min-w-0 transition-transform duration-300 hover:scale-105" data-aos="fade-up" data-aos-duration="800" data-aos-delay={(1 + i) * 120}>

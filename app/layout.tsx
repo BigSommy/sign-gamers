@@ -21,6 +21,10 @@ function MobileBottomNav() {
         <MdLeaderboard size={22} />
         <span className="text-[10px] mt-1">Leaderboard</span>
       </a>
+      <a href="/gamers" className="flex flex-col items-center justify-center text-orange-400 hover:text-white text-xs font-semibold px-2 transition-all duration-200 hover:drop-shadow-[0_0_8px_#f23900] focus:drop-shadow-[0_0_8px_#f23900]">
+        <FaGamepad size={22} />
+        <span className="text-[10px] mt-1">Gamers</span>
+      </a>
       <a href="/blog" className="flex flex-col items-center justify-center text-orange-400 hover:text-white text-xs font-semibold px-2 transition-all duration-200 hover:drop-shadow-[0_0_8px_#f23900] focus:drop-shadow-[0_0_8px_#f23900]">
         <BsFolderFill size={22} />
         <span className="text-[10px] mt-1">Blog</span>
