@@ -77,6 +77,9 @@ export default function FeaturedTournamentCarousel({ tournaments }: FeaturedTour
 
   // Only show the visible cards for the current view
   const getVisibleTournaments = () => {
+    if (tournaments.length === 1) {
+      return [tournaments[0]];
+    }
     if (cardsPerView === 1) {
       return tournaments.slice(current, current + 1);
     } else if (cardsPerView === 2) {
@@ -124,30 +127,32 @@ export default function FeaturedTournamentCarousel({ tournaments }: FeaturedTour
         style={{ scrollBehavior: "smooth" }}
       >
         {getVisibleTournaments().map((t, idx) => (
-          <div
-            key={t.id}
-            className={`min-w-[${CARD_WIDTH}px] max-w-[${CARD_WIDTH}px] snap-center bg-[#23232a]/80 backdrop-blur-md rounded-2xl shadow-2xl border border-orange-500/30 flex flex-col transition-transform duration-300 ${idx === 0 ? "scale-100" : "scale-95 opacity-80"}`}
-            style={{ width: CARD_WIDTH, marginRight: CARD_GAP }}
-          >
-            {t.banner_url && (
-              <img
-                src={t.banner_url}
-                alt={t.title}
-                className="w-full h-40 object-cover rounded-t-2xl"
-                loading="lazy"
-              />
-            )}
-            <div className="flex-1 flex flex-col p-4">
-              <h3 className="text-lg font-bold text-orange-400 mb-1 font-['Exo_2'] truncate">{t.title}</h3>
-              <p className="text-gray-200 text-sm mb-3 line-clamp-3">{truncate(t.description, 110)}</p>
-              <Link
-                href={`/tournaments/${t.id}`}
-                className="mt-auto bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold shadow transition-all duration-200 text-center"
-              >
-                Join Now
-              </Link>
+          t ? (
+            <div
+              key={t.id}
+              className={`min-w-[${CARD_WIDTH}px] max-w-[${CARD_WIDTH}px] snap-center bg-[#23232a]/80 backdrop-blur-md rounded-2xl shadow-2xl border border-orange-500/30 flex flex-col transition-transform duration-300 ${idx === 0 ? "scale-100" : "scale-95 opacity-80"}`}
+              style={{ width: CARD_WIDTH, marginRight: CARD_GAP }}
+            >
+              {t.banner_url && (
+                <img
+                  src={t.banner_url}
+                  alt={t.title}
+                  className="w-full h-40 object-cover rounded-t-2xl"
+                  loading="lazy"
+                />
+              )}
+              <div className="flex-1 flex flex-col p-4">
+                <h3 className="text-lg font-bold text-orange-400 mb-1 font-['Exo_2'] truncate">{t.title}</h3>
+                <p className="text-gray-200 text-sm mb-3 line-clamp-3">{truncate(t.description, 110)}</p>
+                <Link
+                  href={`/tournaments/${t.id}`}
+                  className="mt-auto bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold shadow transition-all duration-200 text-center"
+                >
+                  Join Now
+                </Link>
+              </div>
             </div>
-          </div>
+          ) : null
         ))}
       </div>
       {/* Pagination dots */}

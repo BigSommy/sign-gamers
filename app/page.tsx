@@ -244,7 +244,7 @@ export default function Home() {
             <span className="text-orange-400 animate-pulse text-lg font-bold">Loading tournaments...</span>
           </div>
         ) : tournaments.length > 0 ? (
-          <FeaturedTournamentCarousel tournaments={tournaments} />
+          <FeaturedTournamentCarousel tournaments={tournaments.filter(t => t && typeof t.banner_url === 'string' && t.banner_url)} />
         ) : null}
       </div>
       {/* Games We Play Section */}
