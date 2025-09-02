@@ -1,3 +1,4 @@
+// Minor change for commit/push test
 import CommunityGameCard from '@/components/CommunityGameCard';
 
 type Game = {
