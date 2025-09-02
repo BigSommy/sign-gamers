@@ -1,190 +1,161 @@
-
 "use client";
-import React, { useState, useEffect } from "react";
-import { games } from "../gamesData";
-import { supabase } from "@/lib/supabase";
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import Link from 'next/link';
 
-// Reuse the points logic
-const calculatePoints = (position: number): number => {
-  switch(position) {
-    case 1: return 100;
-    case 2: return 75;
-    case 3: return 50;
-    default: return 10;
-  }
-};
+type Tournament = { id: string; title: string };
+type LeaderRow = { user_id: string; username: string; profile_picture_url?: string | null; x_handle?: string | null; points: number; tournaments_completed: number; href: string };
+
+const POSITION_POINTS: Record<number, number> = { 1: 100, 2: 75, 3: 50, 4: 30, 5: 10 };
 
 export default function GlobalLeaderboardPage() {
-  const [selectedGame, setSelectedGame] = useState<string>("all");
-  const [timeRange, setTimeRange] = useState<string>("all");
-  const [customRange, setCustomRange] = useState<{from: string, to: string}>({from: "", to: ""});
-  const [leaderboard, setLeaderboard] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [selectedTournament, setSelectedTournament] = useState<string>('all');
+  const [timeRange, setTimeRange] = useState<'all'|'weekly'|'monthly'|'custom'>('all');
+  const [customFrom, setCustomFrom] = useState<string>('');
+  const [customTo, setCustomTo] = useState<string>('');
+  const [rows, setRows] = useState<LeaderRow[]>([]);
+  const [rawResults, setRawResults] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>('');
 
   useEffect(() => {
-    async function fetchLeaderboard() {
-      setLoading(true);
-      let query = supabase.from("tournaments").select("id, title, game_id, created_at");
-      if (selectedGame !== "all") query = query.eq("game_id", selectedGame);
-      if (timeRange === "week") {
-        const from = new Date();
-        from.setDate(from.getDate() - 7);
-        query = query.gte("created_at", from.toISOString());
-      } else if (timeRange === "month") {
-        const from = new Date();
-        from.setMonth(from.getMonth() - 1);
-        query = query.gte("created_at", from.toISOString());
-      } else if (timeRange === "custom" && customRange.from && customRange.to) {
-        query = query.gte("created_at", customRange.from).lte("created_at", customRange.to);
-      }
-      const { data: tournaments } = await query;
-      if (!tournaments) { setLeaderboard([]); setLoading(false); return; }
-      // Fetch leaderboard entries for all tournaments
-      let allEntries: any[] = [];
-      for (const tournament of tournaments) {
-        const { data: entries } = await supabase
-          .from("leaderboard")
-          .select("id, username, score, x_handle")
-          .eq("tournament_id", tournament.id)
-          .order("score", { ascending: false });
-        if (entries) {
-          const entriesWithPosition = entries.map((entry, idx) => ({
-            ...entry,
-            position: idx + 1,
-            tournament_id: tournament.id,
-            tournament_title: tournament.title || "Unknown Tournament",
-            game_id: tournament.game_id
-          }));
-          allEntries.push(...entriesWithPosition);
+    (async () => {
+      const { data } = await supabase.from('tournaments').select('id,title').order('created_at', { ascending: false });
+      setTournaments((data as Tournament[]) || []);
+    })();
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true); setError('');
+      try {
+        let q: any = supabase.from('tournament_results').select('user_id,position,tournament_id,created_at');
+        if (selectedTournament !== 'all') q = q.eq('tournament_id', selectedTournament);
+        if (timeRange === 'weekly') q = q.gte('created_at', new Date(Date.now() - 7*24*60*60*1000).toISOString());
+        if (timeRange === 'monthly') q = q.gte('created_at', new Date(Date.now() - 30*24*60*60*1000).toISOString());
+        if (timeRange === 'custom' && customFrom) {
+          q = q.gte('created_at', new Date(customFrom).toISOString());
+          if (customTo) q = q.lte('created_at', new Date(customTo).toISOString());
         }
-      }
-      // Calculate global leaderboard
-      const globalScores: {[key: string]: any} = {};
-      allEntries.forEach(entry => {
-        if (!globalScores[entry.username]) {
-          globalScores[entry.username] = {
-            username: entry.username,
-            totalScore: 0,
-            tournamentsPlayed: 0,
-            x_handle: entry.x_handle
+    const { data: results, error: resultsError } = await q;
+        if (resultsError) throw resultsError;
+    setRawResults(results || []);
+
+        const stats: Record<string, { points: number; tournaments: Set<string> }> = {};
+        (results || []).forEach((r: any) => {
+          const u = r.user_id; if (!u) return;
+          if (!stats[u]) stats[u] = { points: 0, tournaments: new Set() };
+          stats[u].points += POSITION_POINTS[r.position] || 0;
+          stats[u].tournaments.add(r.tournament_id);
+        });
+
+
+        const uids = Object.keys(stats);
+
+        // Only match user_profiles by user_id
+        let profiles: any[] = [];
+        if (uids.length > 0) {
+          const { data } = await supabase.from('user_profiles').select('user_id,username,profile_picture_url,twitter_handle').in('user_id', uids);
+          profiles = data || [];
+        }
+
+        const mapByUserId = new Map((profiles as any[]).map((p: any) => [p.user_id, p]));
+
+        const merged: LeaderRow[] = uids.map(u => {
+          const p = mapByUserId.get(u) || null;
+          const displayName = p?.username || u;
+          const href = `/profile/${u}`;
+          return {
+            user_id: u,
+            username: displayName,
+            profile_picture_url: p?.profile_picture_url || null,
+            x_handle: p?.twitter_handle || null,
+            points: stats[u].points,
+            tournaments_completed: stats[u].tournaments.size,
+            href
           };
-        }
-        globalScores[entry.username].totalScore += calculatePoints(entry.position);
-        globalScores[entry.username].tournamentsPlayed++;
-      });
-      const sortedLeaderboard = Object.values(globalScores).sort((a: any, b: any) => b.totalScore - a.totalScore);
-      setLeaderboard(sortedLeaderboard);
-      setLoading(false);
-    }
-    fetchLeaderboard();
-  }, [selectedGame, timeRange, customRange]);
+        }).sort((a,b) => b.points - a.points);
+
+        setRows(merged);
+      } catch (e: any) { console.error(e); setError(e?.message || String(e)); }
+      finally { setLoading(false); }
+    })();
+  }, [selectedTournament, timeRange, customFrom, customTo]);
 
   return (
-    <main className="min-h-screen p-2 max-w-xl mx-auto text-white">
-      <div className="bg-[#18181b] relative z-10 rounded-xl p-2 shadow-lg">
-        <h1 className="text-xl font-bold mb-1 text-orange-400 font-['Exo_2']">Global Leaderboard</h1>
-        <div className="flex flex-wrap gap-2 mb-4">
-          <select value={selectedGame} onChange={e => setSelectedGame(e.target.value)} className="bg-[#222] text-white rounded px-2 py-1">
-            <option value="all">All Games</option>
-            {games.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
-          </select>
-          <select value={timeRange} onChange={e => setTimeRange(e.target.value)} className="bg-[#222] text-white rounded px-2 py-1">
-            <option value="all">All Time</option>
-            <option value="week">This Week</option>
-            <option value="month">This Month</option>
-            <option value="custom">Custom</option>
-          </select>
-          {timeRange === "custom" && (
-            <>
-              <input type="date" value={customRange.from} onChange={e => setCustomRange(r => ({...r, from: e.target.value}))} className="bg-[#222] text-white rounded px-2 py-1" />
-              <input type="date" value={customRange.to} onChange={e => setCustomRange(r => ({...r, to: e.target.value}))} className="bg-[#222] text-white rounded px-2 py-1" />
-            </>
-          )}
-        </div>
-        {loading ? (
-          <div className="flex justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
-          </div>
-        ) : leaderboard.length === 0 ? (
-          <p className="text-gray-400 text-center py-8">No leaderboard entries yet.</p>
-        ) : (
-          <div className="overflow-hidden rounded-lg border border-gray-800">
-            <table className="w-full bg-[#222] rounded-xl overflow-hidden text-xs">
-              <thead>
-                <tr className="bg-[#18181b] text-left">
-                  <th className="py-1 px-2 font-semibold text-gray-300">#</th>
-                  <th className="py-1 px-2 font-semibold text-gray-300">Player</th>
-                  <th className="py-1 px-2 font-semibold text-gray-300 text-right">Total Points</th>
-                  <th className="py-1 px-2 font-semibold text-gray-300 text-center">Tournaments</th>
-                </tr>
-              </thead>
-              <tbody>
-                {leaderboard.map((entry, index) => (
-                  <tr key={entry.username} className={`border-t border-gray-800 hover:bg-gray-800/50 cursor-pointer transition-colors ${index < 3 ? 'bg-gradient-to-r from-yellow-900/20 to-transparent' : ''}`}>
-                    <td className="py-1 px-2">
-                      <div className="flex items-center">
-                        <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full mr-1.5 ${
-                          index === 0 ? 'bg-yellow-500 text-black' : 
-                          index === 1 ? 'bg-gray-400 text-black' : 
-                          index === 2 ? 'bg-amber-700 text-white' : 'bg-gray-700 text-white'
-                        } font-bold`}>
-                          {index + 1}
-                        </span>
-                        {index < 3 && (
-                          <span className="ml-1">
-                            {index === 0 ? '🏆' : index === 1 ? '🥈' : '🥉'}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="py-1 px-2 font-medium">
-                      <div className="flex items-center">
-                        <div className="w-6 h-6 rounded-full bg-gray-700 mr-1.5 overflow-hidden">
-                          {entry.x_handle && (
-                            <img 
-                              src={`/api/proxy-avatar?handle=${encodeURIComponent(entry.x_handle.replace('@',''))}`} 
-                              alt={entry.username}
-                              className="w-full h-full object-cover"
-                              onError={e => { (e.target as HTMLImageElement).src = '/default-pfp.png'; }}
-                            />
-                          )}
-                        </div>
-                        <div>
-                          <div className="font-medium text-xs">{entry.username}</div>
-                          {entry.x_handle && (
-                            <a 
-                              href={`https://x.com/${entry.x_handle.replace('@', '')}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs text-gray-400 hover:text-orange-400 flex items-center gap-1"
-                              onClick={e => e.stopPropagation()}
-                            >
-                              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                              </svg>
-                              {entry.x_handle}
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-1 px-2 text-right font-bold text-sm">
-                      {entry.totalScore}
-                    </td>
-                    <td className="py-1 px-2 text-center">
-                      <div className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-gray-800 text-gray-300">
-                        {entry.tournamentsPlayed} {entry.tournamentsPlayed === 1 ? 'tournament' : 'tournaments'}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+    <main className="min-h-screen p-6 text-white max-w-4xl mx-auto">
+      <h1 className="text-3xl font-bold mb-4 text-orange-400">Global Leaderboard</h1>
+
+      <div className="mb-4 relative z-10 flex gap-3 items-center">
+        <select value={selectedTournament} onChange={e => setSelectedTournament(e.target.value)} className="bg-[#111] p-2 rounded">
+          <option value="all">All tournaments ({tournaments.length})</option>
+          {tournaments.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
+        </select>
+
+        <select value={timeRange} onChange={e => setTimeRange(e.target.value as any)} className="bg-[#111] p-2 rounded">
+          <option value="all">All time</option>
+          <option value="weekly">Weekly</option>
+          <option value="monthly">Monthly</option>
+          <option value="custom">Custom</option>
+        </select>
+
+        {timeRange === 'custom' && (
+          <>
+            <input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)} className="p-2 bg-[#111] rounded" />
+            <input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)} className="p-2 bg-[#111] rounded" />
+          </>
         )}
+      </div>
+
+  {/* ...existing code... */}
+
+      {loading && <div className="text-gray-400">Loading...</div>}
+      <div className="bg-[#18181b] relative z-10 rounded p-3 sm:p-4">
+        <table className="w-full table-fixed">
+          <colgroup>
+            <col className="w-7 sm:w-10" />
+            <col className="w-[47%] sm:w-[52%]" />
+            <col className="w-[19%] sm:w-[18%]" />
+            <col className="w-[19%] sm:w-[18%]" />
+          </colgroup>
+          <thead>
+            <tr className="text-left text-gray-300 text-xs sm:text-sm">
+              <th className="py-1 sm:py-2 font-medium">#</th>
+              <th className="py-1 sm:py-2 font-medium">Player</th>
+              <th className="py-1 sm:py-2 font-medium text-right">Points</th>
+              <th className="py-1 sm:py-2 font-medium text-right">Tournaments</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={r.user_id} className="border-t border-[#222]">
+                <td className="py-1.5 sm:py-2 align-middle text-[11px] sm:text-sm">{i+1}</td>
+                <td className="py-2 sm:py-3 align-middle">
+                  <div className="flex items-start gap-2 sm:gap-3 min-w-0">
+                    {r.profile_picture_url
+                      ? <img src={r.profile_picture_url} alt={r.username} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover flex-none" />
+                      : <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-700 flex items-center justify-center flex-none text-xs sm:text-sm">{r.username?.[0]?.toUpperCase()}</div>}
+                    <div className="break-words">
+                      <div className="font-semibold leading-tight text-[13px] sm:text-base">{r.username}</div>
+                      <div className="text-[10px] sm:text-xs leading-tight">
+                        {r.x_handle
+                          ? <a className="text-blue-400 hover:underline" href={`https://x.com/${r.x_handle.replace(/^@/, '')}`} target="_blank" rel="noreferrer">@{r.x_handle.replace(/^@/, '')}</a>
+                          : <span className="text-gray-500">-</span>}
+                      </div>
+                      <Link href={r.href} className="text-[10px] sm:text-xs text-gray-400 hover:text-gray-300">View profile</Link>
+                    </div>
+                  </div>
+                </td>
+                <td className="py-1.5 sm:py-2 align-middle font-semibold text-orange-300 text-[11px] sm:text-sm whitespace-nowrap text-right pr-3 sm:pr-4">{r.points}</td>
+                <td className="py-1.5 sm:py-2 align-middle text-[11px] sm:text-sm whitespace-nowrap text-right pl-1 sm:pl-2">{r.tournaments_completed}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {rows.length === 0 && !loading && <div className="text-gray-400 mt-4">No leaderboard data for selected filters.</div>}
       </div>
     </main>
   );
 }
-
 

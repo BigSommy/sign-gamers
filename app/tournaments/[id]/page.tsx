@@ -1,19 +1,9 @@
-// app/tournaments/[id]/page.tsx
-
 "use client";
-import { useEffect, useState, useRef } from "react";
-import { games } from '@/app/gamesData';
-import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import html2canvas from 'html2canvas';
-
-interface LeaderboardEntry {
-  id: string;
-  username: string;
-  score: number;
-  tournament_id: string;
-  x_handle?: string;
-}
+import { useAuth } from '@/contexts/AuthContext';
+import Link from 'next/link';
 
 type Tournament = {
   id: string;
@@ -21,514 +11,417 @@ type Tournament = {
   description: string;
   status: "upcoming" | "ongoing" | "past";
   banner_url: string | null;
-  register_link: string | null;
+  registration_deadline?: string;
   created_at?: string;
   rules?: string | null;
   game_id?: string;
+  prize_pool?: string;
 };
 
-interface Registration {
+type Registration = {
   id: string;
+  user_id: string;
+  tournament_id: string;
   username: string;
-  game_id: string;
-  x_handle?: string;
   created_at: string;
-}
+  profile_picture_url?: string | null;
+};
 
-export default function TournamentDetailPage() {
+type TournamentResult = {
+  id: string;
+  tournament_id: string;
+  user_id: string;
+  position: number;
+  prize?: string;
+  player?: {
+    username: string;
+    profile_picture_url: string | null;
+  };
+};
+
+export default function TournamentPage() {
+  const router = useRouter();
   const params = useParams();
   const id = typeof params?.id === "string" ? params.id : Array.isArray(params?.id) ? params.id[0] : undefined;
+  const { roles } = useAuth();
   const [tournament, setTournament] = useState<Tournament | null>(null);
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [leaderboard, setLeaderboard] = useState<TournamentResult[]>([]);
   const [loading, setLoading] = useState(true);
-  const [registrationDeadline, setRegistrationDeadline] = useState<string | null>(null);
-  const [registrationTimeLeft, setRegistrationTimeLeft] = useState<string>("");
-  const [registered, setRegistered] = useState(false);
-  const [regForm, setRegForm] = useState({
-    secret_code: "",
-    x_handle: "",
-  });
-  const [userData, setUserData] = useState<{
-    username: string;
-    game_id: string;
-  } | null>(null);
-  const [loadingUser, setLoadingUser] = useState(false);
-  const [codeError, setCodeError] = useState("");
   const [registrations, setRegistrations] = useState<Registration[]>([]);
-  // Bracket logic
-  const [bracket, setBracket] = useState<any[]>([]);
-  const [round, setRound] = useState(1);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [adminPass, setAdminPass] = useState('');
-  const [loser, setLoser] = useState<any>(null);
+  const [showResultForm, setShowResultForm] = useState(false);
+  const [submittingResults, setSubmittingResults] = useState(false);
+  const isAdmin = roles?.includes('admin') || roles?.includes('game_host');
+  // Filter out registrations that don't have a valid user_id to avoid uuid 'null' errors
+  const validRegistrations = registrations.filter(r => !!r.user_id && r.user_id !== 'null');
+  const invalidCount = registrations.length - validRegistrations.length;
 
   useEffect(() => {
     if (!id) return;
     const fetchData = async () => {
-      const { data: t } = await supabase.from("tournaments").select("*").eq("id", id).single();
+      setLoading(true);
+      // Fetch tournament details
+      const { data: t } = await supabase
+        .from("tournaments")
+        .select("*")
+        .eq("id", id)
+        .single();
       setTournament(t);
-      setRegistrationDeadline(t?.registration_deadline || null);
-      const { data: lb } = await supabase.from("leaderboard").select("*").eq("tournament_id", id).order("score", { ascending: false });
-      setLeaderboard(lb || []);
-      // Fetch registrations
-      const { data: regs } = await supabase.from("registrations").select("*").eq("tournament_id", id);
+
+      // Fetch registered players
+      const { data: regs, error: regError } = await supabase
+        .from("registrations")
+        .select(`
+          id,
+          user_id,
+          tournament_id,
+          created_at,
+          username,
+          profile_picture_url
+        `)
+        .eq("tournament_id", id);
+
+      console.log('Registered players:', regs, regError);
+      
       setRegistrations(regs || []);
 
+      // Fetch leaderboard with player details
+      const { data: results } = await supabase
+        .from("tournament_results")
+        .select(`
+          *,
+          player:user_profiles(
+            username,
+            profile_picture_url
+          )
+        `)
+        .eq("tournament_id", id)
+        .order('position', { ascending: true });
+
+      setLeaderboard(results || []);
       setLoading(false);
     };
     fetchData();
   }, [id]);
 
-  // Timer logic
-  useEffect(() => {
-    if (!registrationDeadline) return;
-    const interval = setInterval(() => {
-      const diff = new Date(registrationDeadline).getTime() - Date.now();
-      if (diff <= 0) {
-        setRegistrationTimeLeft("Registration closed");
-        clearInterval(interval);
-      } else {
-        const mins = Math.floor(diff / 60000);
-        const secs = Math.floor((diff % 60000) / 1000);
-        setRegistrationTimeLeft(`${mins}m ${secs}s left`);
-      }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [registrationDeadline]);
+  const handleAddResult = () => {
+    setShowResultForm(!showResultForm);
+  };
 
-  const lookupUser = async (e: React.FormEvent) => {
+  const handleSubmitResults = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setLoadingUser(true);
-    setCodeError("");
-    
+    if (!id || submittingResults) return;
+
     try {
-      // First get the user's identity
-      const { data: identity, error: identityError } = await supabase
-        .from('player_identities')
-        .select('id, username, twitter')
-        .eq('secret_code', regForm.secret_code.trim())
-        .single();
+      setSubmittingResults(true);
+      const form = e.currentTarget;
+      const positions = new FormData(form);
+      const results: { user_id: string; position: number; prize: string | null }[] = [];
+      let hasError = false;
+      const usedPositions = new Set<number>();
 
-      if (identityError || !identity) {
-        setCodeError("Invalid secret code. Please check and try again.");
-        setLoadingUser(false);
-        return;
-      }
+      // positions keys are like position_<regId>
+      positions.forEach((value, key) => {
+        if (key.startsWith('position_')) {
+          const regId = key.replace('position_', '');
+          const position = parseInt(value as string);
+          const prize = positions.get(`prize_${regId}`) as string || null;
+          const userId = positions.get(`user_id_${regId}`) as string || null;
 
-      // Then get the user's game ID for this tournament's game
-      const { data: gameData, error: gameError } = await supabase
-        .from('player_game_ids')
-        .select('game_id, player_game_id')
-        .eq('user_id', identity.id)
-        .eq('game_id', tournament?.game_id)
-        .single();
+          // Validate userId exists and looks like a UUID
+          const uuidRegex = /^[0-9a-fA-F-]{36}$/;
+          if (!userId || userId === 'null' || !uuidRegex.test(userId)) {
+            hasError = true;
+            console.warn(`Registration ${regId} missing valid user_id:`, userId);
+            return;
+          }
 
-      if (gameError || !gameData) {
-        setCodeError(`You haven't registered a game ID for this tournament's game.`);
-        setLoadingUser(false);
-        return;
-      }
-
-      setUserData({
-        username: identity.username,
-        game_id: gameData.player_game_id
+          if (position && !usedPositions.has(position)) {
+            usedPositions.add(position);
+            results.push({
+              user_id: userId,
+              position,
+              prize
+            });
+          } else if (position) {
+            hasError = true;
+          }
+        }
       });
-      
-      // Auto-fill Twitter handle if not already set
-      if (identity.twitter && !regForm.x_handle) {
-        setRegForm(prev => ({ ...prev, x_handle: identity.twitter }));
+
+      if (hasError) {
+        alert('Each position must be unique. Please check your entries.');
+        return;
       }
-      
-    } catch (err) {
-      console.error('Error looking up user:', err);
-      setCodeError('An error occurred. Please try again.');
-    }
-    
-    setLoadingUser(false);
-  };
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!userData) return;
-    
-    const { error } = await supabase.from("registrations").insert([{ 
-      username: userData.username,
-      game_id: userData.game_id,
-      x_handle: regForm.x_handle,
-      tournament_id: id 
-    }]);
-    
-    if (!error) {
-      setRegistered(true);
-      setRegistrations([...registrations, { 
-        username: userData.username, 
-        game_id: userData.game_id, 
-        x_handle: regForm.x_handle,
-        id: "", 
-        created_at: new Date().toISOString() 
-      }]);
-    } else {
-      alert("Registration failed: " + error.message);
-    }
-  };
+      // Sort by position to ensure order
+      results.sort((a, b) => a.position - b.position);
 
-  // Bracket logic: fetch from tournament_brackets table and subscribe to updates
-  useEffect(() => {
-    if (!id) return;
-    let subscription: any;
-    const fetchBracket = async () => {
-      const { data: bracketRow } = await supabase
-        .from('tournament_brackets')
+      // If there was a validation error, inform the admin which entries failed
+      if (hasError) {
+        alert('One or more entries are invalid. Make sure each position is unique and every registration is linked to a valid user.');
+        return;
+      }
+
+      // Delete existing results first
+      console.log('Attempting to delete existing results...');
+      const { error: delError } = await supabase
+        .from('tournament_results')
+        .delete()
+        .eq('tournament_id', id);
+
+      if (delError) {
+        console.error('Error deleting existing results:', delError);
+        alert('Failed to clear existing results.');
+        return;
+      }
+
+      // Insert new results
+      console.log('Attempting to insert new results...');
+
+      // Resolve profile PKs (registrations.user_id currently stores profile.id) to auth user ids (user_profiles.user_id)
+      const profileIds = results.map(r => r.user_id);
+      const { data: profiles, error: profilesError } = await supabase
+        .from('user_profiles')
+        .select('id, user_id')
+        .in('id', profileIds.filter(Boolean));
+
+      if (profilesError) {
+        console.error('Error fetching user_profiles mapping:', profilesError);
+        alert('Failed to resolve profiles.');
+        return;
+      }
+
+      const profileMap: Record<string, string> = {};
+      (profiles || []).forEach((p: any) => { profileMap[p.id] = p.user_id; });
+
+      // Build rows for insertion using auth user_id expected by tournament_results FK
+      const insertRows = results.map(r => ({
+        tournament_id: id,
+        user_id: profileMap[r.user_id] || null,
+        position: r.position,
+        prize: r.prize
+      }));
+
+      // Ensure all rows have a resolved user_id
+      const unresolved = insertRows.filter(r => !r.user_id);
+      if (unresolved.length > 0) {
+        console.error('Unresolved profile -> auth user_id for rows:', unresolved);
+        alert('Some registrations could not be resolved to users. Resolve their profiles first.');
+        return;
+      }
+
+      const { error: insertError } = await supabase
+        .from('tournament_results')
+        .insert(insertRows);
+
+      if (insertError) {
+        console.error('Error inserting results:', insertError);
+        alert('Failed to insert new results: ' + (insertError.message || JSON.stringify(insertError)));
+        return;
+      }
+
+      // Refresh leaderboard by fetching tournament_results then fetching profile info by auth user_id
+      const { data: newResults, error: resultsError } = await supabase
+        .from('tournament_results')
         .select('*')
         .eq('tournament_id', id)
-        .single();
-      if (bracketRow) {
-        setBracket(bracketRow.bracket_json || []);
-        setRound(bracketRow.round || 1);
-      } else if (registrationTimeLeft === "Registration closed" && registrations.length > 0) {
-        // Only generate if no bracket exists in DB
-        const shuffled = [...registrations].sort(() => Math.random() - 0.5);
-        const pairs = [];
-        for (let i = 0; i < shuffled.length; i += 2) {
-          pairs.push({
-            player1: shuffled[i],
-            player2: shuffled[i + 1] || null,
-            winner: null,
-          });
-        }
-        setBracket(pairs);
-        setRound(1);
+        .order('position', { ascending: true });
+
+      if (resultsError || !newResults) {
+        console.error('Error fetching tournament_results:', resultsError);
+      } else {
+        // collect auth user_ids from results
+        const authIds = Array.from(new Set(newResults.map((r: any) => r.user_id)));
+        const { data: profileRows } = await supabase
+          .from('user_profiles')
+          .select('user_id, username, profile_picture_url')
+          .in('user_id', authIds);
+
+        const authMap: Record<string, any> = {};
+        (profileRows || []).forEach((p: any) => { authMap[p.user_id] = p; });
+
+        const leaderboardRows = newResults.map((r: any) => ({
+          ...r,
+          player: authMap[r.user_id] || null
+        }));
+
+        setLeaderboard(leaderboardRows as any);
+        setShowResultForm(false);
       }
-    };
-    fetchBracket();
-
-    // Subscribe to bracket updates
-    subscription = supabase
-      .channel('public:tournament_brackets')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'tournament_brackets',
-        filter: `tournament_id=eq.${id}`
-      }, (payload: any) => {
-        if (payload.new) {
-          setBracket(payload.new.bracket_json || []);
-          setRound(payload.new.round || 1);
-        }
-      })
-      .subscribe();
-
-    return () => {
-      if (subscription && subscription.unsubscribe) {
-        subscription.unsubscribe();
-      } else if (supabase.removeChannel) {
-        supabase.removeChannel(subscription);
-      }
-    };
-  }, [id, registrationTimeLeft, registrations]);
-
-  // Simple admin check (client-side only)
-  const checkAdmin = () => {
-    if (adminPass === process.env.NEXT_PUBLIC_ADMIN_PASSWORD) setIsAdmin(true);
-    else alert('Wrong password');
-  };
-
-  // Advance to next round
-  const advanceRound = () => {
-    const winners = bracket.map((m: any) => m.winner).filter(Boolean);
-    const nextPairs = [];
-    for (let i = 0; i < winners.length; i += 2) {
-      nextPairs.push({
-        player1: { username: winners[i] },
-        player2: winners[i + 1] ? { username: winners[i + 1] } : null,
-        winner: null,
-      });
+    } catch (err) {
+      console.error('Error in handleSubmitResults:', err);
+      alert('An error occurred while saving the results.');
+    } finally {
+      setSubmittingResults(false);
     }
-    setBracket(nextPairs);
-    setRound(r => r + 1);
-  };
-
-  // Automatically add the winner and top 3 to the leaderboard when the bracket is finished, without admin input.
-  useEffect(() => {
-    // Removed automatic addition of 2nd and 3rd place to leaderboard. Now handled manually.
-  }, [bracket, id, supabase]);
-
-  useEffect(() => {
-    if (!id) return;
-    const fetchLoser = async () => {
-      const { data } = await supabase.from('losers').select('*').eq('tournament_id', id).single();
-      setLoser(data || null);
-    };
-    fetchLoser();
-  }, [id]);
-
-  // Helper to get x_handle from registrations
-  function getXHandle(username: string) {
-    const reg = registrations.find(r => r.username === username);
-    return reg?.x_handle || '';
-  }
-
-  // Download handler for podium
-  const downloadPodium = async () => {
-    const node = document.getElementById('podium-card');
-    if (!node) return;
-    const canvas = await html2canvas(node, { useCORS: true });
-    const link = document.createElement('a');
-    link.download = 'podium.png';
-    link.href = canvas.toDataURL();
-    link.click();
-  };
-  // Download handler for loser SBT
-  const downloadLoser = async () => {
-    const node = document.getElementById('loser-sbt-card');
-    if (!node) return;
-    const canvas = await html2canvas(node, { useCORS: true });
-    const link = document.createElement('a');
-    link.download = 'loser-sbt.png';
-    link.href = canvas.toDataURL();
-    link.click();
   };
 
   if (loading) return <main className="min-h-screen p-6 text-white">Loading...</main>;
   if (!tournament) return <main className="min-h-screen p-6 text-white">Tournament not found.</main>;
 
   return (
-    <main className="min-h-screen p-6 max-w-2xl mx-auto text-white bg-[#18181b] rounded-2xl shadow-2xl">
+    <main className="min-h-screen p-6 max-w-4xl mx-auto text-white">
       {tournament.banner_url && (
-        <img src={tournament.banner_url} alt="Banner" className="w-full h-56 object-cover rounded-xl mb-4" />
+        <img 
+          src={tournament.banner_url} 
+          alt={tournament.title}
+          className="w-full h-64 object-cover rounded-xl mb-6" 
+        />
       )}
-      <h1 className="text-3xl font-bold mb-2 text-orange-400 font-['Exo_2']">{tournament.title}</h1>
-      <p className="mb-4 text-gray-300">{tournament.description}</p>
-      {/* Only show registered gamers for PvP games */}
-      {(() => {
-        const gameMeta = games.find(g => g.id === tournament?.game_id);
-        if (registrationTimeLeft !== 'Registration closed' && gameMeta?.type === 'pvp') {
-          return (
-            <div className="mb-6 bg-[#18181b] relative z-10 p-4 rounded-xl shadow-lg">
-              <h3 className="text-xl font-bold mb-2 text-orange-400 font-['Exo_2']">Registered Gamers</h3>
-              {registrations.length === 0 ? (
-                <p className="text-gray-400">No one has registered yet.</p>
-              ) : (
-                <ul className="list-disc pl-6">
-                  {registrations.map((r) => (
-                    <li key={r.id} className="mb-1">
-                      <span className="font-semibold">{r.username}</span> <span className="text-gray-400">({r.game_id})</span>
-                      {r.x_handle && (
-                        <a href={`https://x.com/${r.x_handle.replace(/^@/, '')}`} target="_blank" rel="noopener noreferrer" className="ml-2 text-blue-400 hover:underline">@{r.x_handle.replace(/^@/, '')}</a>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          );
-        } else if (registrationTimeLeft === 'Registration closed') {
-          // bracket logic
-          return (
-            <div className="mb-6 bg-[#18181b] relative z-10 p-4 rounded-xl shadow-lg">
-              <h3 className="text-xl font-bold mb-2 text-orange-400 font-['Exo_2']">Elimination Bracket</h3>
-              {bracket.length === 0 ? (
-                <p className="text-gray-400">Bracket will be generated soon.</p>
-              ) : (
-                <ul className="space-y-2">
-                  {bracket.map((match, i) => {
-                    // Helper to get registration info
-                    const getReg = (username: string) => registrations.find(r => r.username === username);
-                    const p1 = getReg(match.player1.username) || { username: match.player1.username, game_id: undefined, x_handle: undefined };
-                    const p2 = match.player2 ? (getReg(match.player2.username) || { username: match.player2.username, game_id: undefined, x_handle: undefined }) : null;
-                    return (
-                      <li key={i} className="flex gap-4 items-center">
-                        <span className="font-semibold flex items-center gap-1">
-                          {p1.username}
-                          {p1.game_id && <span className="text-gray-400 text-xs">({p1.game_id})</span>}
-                          {p1.x_handle && (
-                            <a href={`https://x.com/${p1.x_handle.replace(/^@/, '')}`} target="_blank" rel="noopener noreferrer" className="ml-1 text-blue-400 hover:underline" title={`@${p1.x_handle.replace(/^@/, '')}`}>
-                              <svg className="inline w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-                            </a>
-                          )}
-                        </span>
-                        <span className="text-gray-400">vs</span>
-                        {p2 ? (
-                          <span className="font-semibold flex items-center gap-1">
-                            {p2.username}
-                            {p2.game_id && <span className="text-gray-400 text-xs">({p2.game_id})</span>}
-                            {p2.x_handle && (
-                              <a href={`https://x.com/${p2.x_handle.replace(/^@/, '')}`} target="_blank" rel="noopener noreferrer" className="ml-1 text-blue-400 hover:underline" title={`@${p2.x_handle.replace(/^@/, '')}`}>
-                                <svg className="inline w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-                              </a>
-                            )}
-                          </span>
-                        ) : (
-                          <span className="italic text-gray-500">(bye)</span>
-                        )}
-                        {match.winner && (
-                          <span className="ml-4 text-green-400">Winner: {match.winner}</span>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </div>
-          );
-        }
-        return null;
-      })()}
-      {/* Show more info if available */}
-      {tournament.created_at && (
-        <p className="mb-2 text-gray-400 text-sm">Created: {new Date(tournament.created_at).toLocaleString()}</p>
-      )}
-      {tournament.rules && (
-        <div className="mb-4">
-          <h3 className="font-semibold text-lg mb-1">Rules</h3>
-          <div className="prose prose-invert text-gray-200" dangerouslySetInnerHTML={{ __html: tournament.rules }} />
+
+      <div className="mb-8">
+        <h1 className="text-4xl font-bold mb-4 text-orange-400 font-['Exo_2']">{tournament.title}</h1>
+        <p className="text-lg mb-4 text-gray-300">{tournament.description}</p>
+        
+        {tournament.prize_pool && (
+          <div className="mb-4">
+            <h3 className="text-xl font-semibold mb-2 text-orange-300">Prize Pool</h3>
+            <p className="text-white">{tournament.prize_pool}</p>
+          </div>
+        )}
+
+        {tournament.rules && (
+          <div className="mb-4">
+            <h3 className="text-xl font-semibold mb-2 text-orange-300">Rules</h3>
+            <div className="prose prose-invert" dangerouslySetInnerHTML={{ __html: tournament.rules }} />
+          </div>
+        )}
+
+        {tournament.registration_deadline && (
+          <p className="text-sm text-orange-300">
+            Registration closes: {new Date(tournament.registration_deadline).toLocaleString()}
+          </p>
+        )}
+
+        <div className="mt-6">
+          <Link 
+            href={`/tournaments/${id}/register`}
+            className="inline-block bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-8 rounded-lg text-lg transition-colors"
+          >
+            Register Now
+          </Link>
         </div>
-      )}
-      {/* Show leaderboard only after bracket, not at the same time as bracket */}
-      {registrationTimeLeft === 'Registration closed' && (
-        <div className="mb-8 bg-[#18181b] relative z-10 p-4 rounded-xl shadow-lg">
-          <h2 className="text-2xl font-bold text-orange-400 mb-6 text-center font-['Exo_2']">Tournament Leaderboard</h2>
-          {leaderboard.length === 0 ? (
-            <p className="text-gray-400">No entries yet.</p>
-          ) : (
-            <table className="w-full bg-[#18181b] relative z-10 rounded-xl overflow-hidden">
-              <thead>
-                <tr className="text-left bg-[#18181b]">
-                  <th className="py-2 px-4">#</th>
-                  <th className="py-2 px-4">Username</th>
-                  <th className="py-2 px-4">Score</th>
-                </tr>
-              </thead>
-              <tbody>
-                {leaderboard.map((entry, i) => (
-                  <tr key={entry.id} className="border-t border-[#333]">
-                    <td className="py-2 px-4">{i + 1}</td>
-                    <td className="py-2 px-4">{entry.username}</td>
-                    <td className="py-2 px-4">{entry.score}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-          {/* Loser SBT Card */}
-          {loser && (
-            <div className="mt-8 flex flex-col items-center">
-              <div id="loser-sbt-card" className="bg-[#18181b] rounded-2xl shadow-2xl p-6 flex flex-col items-center max-w-xs animate-fade-in-up relative">
-                <button onClick={downloadLoser} title="Download Loser SBT" className="absolute top-2 right-2 p-1 rounded-full bg-red-500 hover:bg-red-600 text-white shadow flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 6-6M12 18.75V3" />
-                  </svg>
-                </button>
-                <img src={loser.x_handle ? `/api/proxy-avatar?handle=${encodeURIComponent(loser.x_handle.replace('@',''))}` : (loser.pfp_url || '/default-pfp.png')} alt="Loser PFP" className="w-24 h-24 rounded-full border-4 border-red-500 object-cover bg-black mb-4" onError={e => { e.currentTarget.src = '/default-pfp.png'; }} />
-                <h3 className="text-2xl font-extrabold text-red-400 mb-2 drop-shadow">LOSER SBT</h3>
-                <div className="text-lg font-bold text-orange-200 mb-1">{loser.username}</div>
-                <a href={`https://x.com/${loser.x_handle.replace('@','')}`} target="_blank" rel="noopener noreferrer" className="text-orange-400 underline text-base mb-2">@{loser.x_handle.replace('@','')}</a>
-                <div className="text-xs text-gray-400 italic">Awarded for finishing last in this tournament</div>
-              </div>
-            </div>
+      </div>
+
+      <div className="bg-[#18181b] rounded-xl p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-orange-400 font-['Exo_2']">Tournament Leaderboard</h2>
+          {isAdmin && (
+            <button
+              onClick={handleAddResult}
+              className={`${showResultForm ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'} text-white p-2 rounded-full transition-colors`}
+              title={showResultForm ? "Cancel" : "Add Result"}
+            >
+              {showResultForm ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+              )}
+            </button>
           )}
         </div>
-      )}
-      {tournament.status === "upcoming" && registrationDeadline && registrationTimeLeft !== "Registration closed" && !registered && (() => {
-        const gameMeta = games.find(g => g.id === tournament.game_id);
-        if (gameMeta && gameMeta.type === 'room') {
-          return (
-            <div className="mb-6 bg-[#18181b] p-4 rounded-xl">
-              <h3 className="text-lg font-semibold mb-2">Room Link / Code</h3>
-              <p className="mb-2 text-orange-400">Registration closes in: {registrationTimeLeft}</p>
-              {tournament.register_link ? (
-                (() => {
-                  // Simple URL check
-                  const isUrl = /^https?:\/\//i.test(tournament.register_link.trim());
-                  if (isUrl) {
-                    return (
-                      <a
-                        href={tournament.register_link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xl text-blue-400 break-all font-mono border border-blue-400 rounded p-3 bg-black/30 text-center underline hover:text-blue-300"
-                      >
-                        {tournament.register_link}
-                      </a>
-                    );
-                  } else {
-                    return (
-                      <div className="text-xl text-blue-400 break-all font-mono border border-blue-400 rounded p-3 bg-black/30 text-center">
-                        {tournament.register_link}
-                      </div>
-                    );
-                  }
-                })()
-              ) : (
-                <span className="text-gray-400">No room link/code provided yet.</span>
-              )}
-              {gameMeta.external_link && (
-                <div className="mt-4">
-                  <span className="font-semibold text-orange-400">Game Site:</span> <a href={gameMeta.external_link} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">{gameMeta.external_link}</a>
-                </div>
-              )}
-            </div>
-          );
-        }
-        // Otherwise, show registration form for PvP games
-        return (
-          <div className="mb-6 bg-[#18181b] p-4 rounded-xl shadow-lg">
-            <h3 className="text-lg font-semibold mb-2">Register for this tournament</h3>
-            <p className="mb-2 text-orange-400">Registration closes in: {registrationTimeLeft}</p>
-            
-            {!userData ? (
-              <form onSubmit={lookupUser} className="flex flex-col gap-2 mb-4">
-                <div className="relative">
-                  <input
-                    placeholder="Enter your secret code"
-                    className="p-2 rounded bg-[#18181b] w-full"
-                    value={regForm.secret_code}
-                    onChange={(e) => setRegForm({ ...regForm, secret_code: e.target.value })}
-                    required
-                  />
-                  {codeError && (
-                    <p className="text-red-400 text-sm mt-1">{codeError}</p>
-                  )}
-                </div>
-                <button 
-                  type="submit" 
-                  className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 flex items-center justify-center"
-                  disabled={loadingUser}
-                >
-                  {loadingUser ? 'Looking up...' : 'Verify Code'}
-                </button>
-              </form>
-            ) : (
-              <div className="mb-4 p-3 bg-green-900/30 border border-green-500/50 rounded">
-                <p className="text-green-300">Welcome back, <span className="font-semibold">{userData.username}</span>!</p>
-                <p className="text-sm text-green-200 mt-1">Game ID: {userData.game_id}</p>
-                <button 
-                  onClick={() => setUserData(null)} 
-                  className="text-xs text-orange-300 hover:text-orange-400 mt-2"
-                >
-                  Not you? Use a different code
-                </button>
+
+        {showResultForm && (
+          <form onSubmit={handleSubmitResults} className="mb-8 bg-gray-900 p-4 rounded-lg">
+            <h3 className="text-lg font-semibold mb-4 text-orange-300">Arrange Tournament Results</h3>
+            {invalidCount > 0 && (
+              <div className="mb-4 p-3 bg-yellow-900/40 border border-yellow-700 rounded text-yellow-200">
+                Warning: {invalidCount} registration(s) are missing a linked user profile and will be hidden from this form. Resolve them in the DB to include them.
               </div>
             )}
-            
-            <form onSubmit={handleRegister} className="flex flex-col gap-2">
-              <input
-                placeholder="X / Twitter handle (optional)"
-                className="p-2 rounded bg-[#18181b]"
-                value={regForm.x_handle}
-                onChange={(e) => setRegForm({ ...regForm, x_handle: e.target.value })}
-              />
-              <button 
-                type="submit" 
-                className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 disabled:opacity-50"
-                disabled={!userData || loading}
+            <div className="space-y-4">
+              {validRegistrations.map((reg) => (
+                <div key={reg.id} className="flex items-center gap-4 bg-gray-800 p-3 rounded">
+                  <div className="flex items-center gap-3 flex-1">
+                    {reg.profile_picture_url ? (
+                      <img 
+                        src={reg.profile_picture_url} 
+                        alt={reg.username}
+                        className="w-10 h-10 rounded-full object-cover border-2 border-orange-400" 
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center border-2 border-orange-400">
+                        <span className="text-lg text-gray-400">{reg.username[0].toUpperCase()}</span>
+                      </div>
+                    )}
+                    <span className="font-semibold">{reg.username}</span>
+                  </div>
+                  <div className="flex gap-2 items-center">
+                    {/* Use registration id as the suffix for stable form field names */}
+                    <input type="hidden" name={`user_id_${reg.id}`} value={reg.user_id || ''} />
+                    <input
+                      type="number"
+                      name={`position_${reg.id}`}
+                      placeholder="Position"
+                      className="w-20 bg-gray-700 text-white p-2 rounded"
+                      min="1"
+                    />
+                    <input
+                      type="text"
+                      name={`prize_${reg.id}`}
+                      placeholder="Prize (optional)"
+                      className="w-40 bg-gray-700 text-white p-2 rounded"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 flex justify-end">
+              <button
+                type="submit"
+                disabled={submittingResults}
+                className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
               >
-                {loading ? 'Registering...' : 'Complete Registration'}
+                {submittingResults ? 'Saving...' : 'Save Results'}
               </button>
-            </form>
+            </div>
+          </form>
+        )}
+
+        {leaderboard.length === 0 ? (
+          <p className="text-gray-400">No results yet.</p>
+        ) : (
+          <div className="space-y-4">
+            {leaderboard.map((result) => (
+              <div 
+                key={result.id} 
+                className="flex items-center gap-4 bg-gray-900 p-4 rounded-lg"
+              >
+                <div className="text-2xl font-bold text-orange-400 w-8">
+                  #{result.position}
+                </div>
+                
+                <Link href={`/profile/${result.user_id}`} className="flex items-center gap-3 flex-1">
+                  {result.player?.profile_picture_url ? (
+                    <img 
+                      src={result.player.profile_picture_url} 
+                      alt={result.player.username}
+                      className="w-12 h-12 rounded-full object-cover border-2 border-orange-400" 
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center border-2 border-orange-400">
+                      <span className="text-xl text-gray-400">
+                        {result.player?.username?.[0]?.toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                  <span className="font-semibold text-lg">{result.player?.username}</span>
+                </Link>
+                
+                {result.prize && (
+                  <div className="text-green-400 font-semibold">
+                    {result.prize}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
-        );
-      })()}
+        )}
+      </div>
     </main>
   );
 }

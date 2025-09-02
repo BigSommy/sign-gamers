@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from 'react';
-import { HomeIcon, TrophyIcon, ChartBarIcon, PencilSquareIcon, UserCircleIcon, UsersIcon, FilmIcon, NewspaperIcon, InformationCircleIcon, LightBulbIcon, HeartIcon } from '@heroicons/react/24/solid';
+import { HomeIcon, TrophyIcon, ChartBarIcon, UsersIcon, FilmIcon, NewspaperIcon, InformationCircleIcon, LightBulbIcon, HeartIcon } from '@heroicons/react/24/solid';
 
 type NavLinkProps = {
   href: string;
@@ -75,21 +75,13 @@ export default function NavPanel({ navOpen, setNavOpen }: { navOpen: boolean, se
            <span>Gamers</span>
          </NavLink>
           
-          <NavLink 
-            href="/register-identity" 
-            className="flex items-center gap-3 py-3 px-4 rounded-lg text-white font-bold bg-white/5 hover:bg-orange-500/20 hover:text-orange-400 transition-all duration-200"
-          >
-            <UserCircleIcon className="h-5 w-5 text-orange-400" />
-            <span>Register Game IDs</span>
-          </NavLink>
-          
-          <NavLink 
-            href="/edit-identity" 
-            className="flex items-center gap-3 py-3 px-4 rounded-lg text-white font-bold bg-white/5 hover:bg-orange-500/20 hover:text-orange-400 transition-all duration-200"
-          >
-            <PencilSquareIcon className="h-5 w-5 text-orange-400" />
-            <span>Edit Game IDs</span>
-          </NavLink>
+            <NavLink 
+              href="/community" 
+              className="flex items-center gap-3 py-3 px-4 rounded-lg text-white font-bold bg-white/5 hover:bg-orange-500/20 hover:text-orange-400 transition-all duration-200"
+            >
+              <InformationCircleIcon className="h-5 w-5 text-orange-400" />
+              <span>Community</span>
+            </NavLink>
           
           <NavLink 
             href="/media" 

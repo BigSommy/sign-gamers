@@ -1,0 +1,183 @@
+"use client";
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from '@/contexts/AuthContext';
+import Link from 'next/link';
+
+type Tournament = {
+  id: string;
+  title: string;
+  description: string;
+  status: "upcoming" | "ongoing" | "past";
+  banner_url: string | null;
+  registration_deadline?: string;
+  created_at?: string;
+  rules?: string | null;
+  game_id?: string;
+  prize_pool?: string;
+};
+
+type TournamentResult = {
+  id: string;
+  tournament_id: string;
+  user_id: string;
+  position: number;
+  prize?: string;
+  player?: {
+    username: string;
+    profile_picture_url: string | null;
+  };
+};
+
+export default function TournamentPage() {
+  const router = useRouter();
+  const params = useParams();
+  const id = typeof params?.id === "string" ? params.id : Array.isArray(params?.id) ? params.id[0] : undefined;
+  const { roles } = useAuth();
+  const [tournament, setTournament] = useState<Tournament | null>(null);
+  const [leaderboard, setLeaderboard] = useState<TournamentResult[]>([]);
+  const [loading, setLoading] = useState(true);
+  const isAdmin = roles?.includes('admin') || roles?.includes('gamehost');
+
+  useEffect(() => {
+    if (!id) return;
+    const fetchData = async () => {
+      setLoading(true);
+      // Fetch tournament details
+      const { data: t } = await supabase
+        .from("tournaments")
+        .select("*")
+        .eq("id", id)
+        .single();
+      setTournament(t);
+
+      // Fetch leaderboard with player details
+      const { data: results } = await supabase
+        .from("tournament_results")
+        .select(`
+          *,
+          player:user_profiles(
+            username,
+            profile_picture_url
+          )
+        `)
+        .eq("tournament_id", id)
+        .order('position', { ascending: true });
+
+      setLeaderboard(results || []);
+      setLoading(false);
+    };
+    fetchData();
+  }, [id]);
+
+  const handleAddResult = () => {
+    router.push(`/admin/tournaments/${id}/add-result`);
+  };
+
+  if (loading) return <main className="min-h-screen p-6 text-white">Loading...</main>;
+  if (!tournament) return <main className="min-h-screen p-6 text-white">Tournament not found.</main>;
+
+  return (
+    <main className="min-h-screen p-6 max-w-4xl mx-auto text-white">
+      {tournament.banner_url && (
+        <img 
+          src={tournament.banner_url} 
+          alt={tournament.title}
+          className="w-full h-64 object-cover rounded-xl mb-6" 
+        />
+      )}
+
+      <div className="mb-8">
+        <h1 className="text-4xl font-bold mb-4 text-orange-400 font-['Exo_2']">{tournament.title}</h1>
+        <p className="text-lg mb-4 text-gray-300">{tournament.description}</p>
+        
+        {tournament.prize_pool && (
+          <div className="mb-4">
+            <h3 className="text-xl font-semibold mb-2 text-orange-300">Prize Pool</h3>
+            <p className="text-white">{tournament.prize_pool}</p>
+          </div>
+        )}
+
+        {tournament.rules && (
+          <div className="mb-4">
+            <h3 className="text-xl font-semibold mb-2 text-orange-300">Rules</h3>
+            <div className="prose prose-invert" dangerouslySetInnerHTML={{ __html: tournament.rules }} />
+          </div>
+        )}
+
+        {tournament.registration_deadline && (
+          <p className="text-sm text-orange-300">
+            Registration closes: {new Date(tournament.registration_deadline).toLocaleString()}
+          </p>
+        )}
+
+        <div className="mt-6">
+          <Link 
+            href={`/tournaments/${id}/register`}
+            className="inline-block bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-8 rounded-lg text-lg transition-colors"
+          >
+            Register Now
+          </Link>
+        </div>
+      </div>
+
+      <div className="bg-[#18181b] rounded-xl p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-orange-400 font-['Exo_2']">Tournament Leaderboard</h2>
+          {isAdmin && (
+            <button
+              onClick={handleAddResult}
+              className="bg-green-600 hover:bg-green-700 text-white p-2 rounded-full"
+              title="Add Result"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+            </button>
+          )}
+        </div>
+
+        {leaderboard.length === 0 ? (
+          <p className="text-gray-400">No results yet.</p>
+        ) : (
+          <div className="space-y-4">
+            {leaderboard.map((result) => (
+              <div 
+                key={result.id} 
+                className="flex items-center gap-4 bg-gray-900 p-4 rounded-lg"
+              >
+                <div className="text-2xl font-bold text-orange-400 w-8">
+                  #{result.position}
+                </div>
+                
+                <Link href={`/profile/${result.user_id}`} className="flex items-center gap-3 flex-1">
+                  {result.player?.profile_picture_url ? (
+                    <img 
+                      src={result.player.profile_picture_url} 
+                      alt={result.player.username}
+                      className="w-12 h-12 rounded-full object-cover border-2 border-orange-400" 
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center border-2 border-orange-400">
+                      <span className="text-xl text-gray-400">
+                        {result.player?.username?.[0]?.toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                  <span className="font-semibold text-lg">{result.player?.username}</span>
+                </Link>
+                
+                {result.prize && (
+                  <div className="text-green-400 font-semibold">
+                    {result.prize}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </main>
+  );
+}

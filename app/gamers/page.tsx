@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useRouter } from 'next/navigation'
 import { supabase } from "@/lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
 import { games } from "../gamesData";
@@ -21,10 +22,13 @@ interface GameId {
 }
 
 interface Gamer {
-  id: string;
+  user_id: string;
+  id: string | null;
   username: string;
-  twitter: string;
-  game_ids: GameId[];
+  email?: string | null;
+  profile_picture_url?: string | null;
+  roles?: string[];
+  game_ids?: GameId[];
   [key: string]: any;
 }
 
@@ -106,22 +110,45 @@ const GamersPage: React.FC = () => {
   const [selected, setSelected] = useState<Gamer | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const router = useRouter()
 
   useEffect(() => {
     async function fetchGamers() {
-      setLoading(true);
-      const { data: users } = await supabase.from("player_identities").select("*");
-      const { data: gameIds } = await supabase.from("player_game_ids").select("*");
+      setLoading(true)
+      try {
+        const res = await fetch('/api/admin/users')
+        const json = await res.json()
+        if (!res.ok) {
+          console.error('Failed to load gamers:', json)
+          setGamers([])
+          return
+        }
 
-      const merged = (users || []).map((user: any) => ({
-        ...user,
-        game_ids: (gameIds || []).filter((gid: any) => gid.user_id === user.id),
-      }));
+        const profiles: any[] = json.profiles || []
+        const roles: any[] = json.roles || []
 
-      setGamers(merged);
-      setLoading(false);
+        // Group roles
+        const rolesByUser: Record<string, string[]> = {}
+        for (const r of roles) {
+          if (!rolesByUser[r.user_id]) rolesByUser[r.user_id] = []
+          rolesByUser[r.user_id].push(r.role)
+        }
+
+        const merged = profiles.map((p) => ({
+          ...p,
+          roles: rolesByUser[p.user_id] || [],
+          game_ids: p.game_ids || []
+        }))
+
+        setGamers(merged)
+      } catch (err) {
+        console.error('Error fetching gamers:', err)
+        setGamers([])
+      } finally {
+        setLoading(false)
+      }
     }
-    fetchGamers();
+    fetchGamers()
   }, []);
 
   const filtered = search
@@ -156,7 +183,7 @@ const GamersPage: React.FC = () => {
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-w-5xl mx-auto relative z-20">
           {filtered.map((gamer) => (
             <motion.button
-              key={gamer.id}
+              key={gamer.user_id}
               // @ts-expect-error: type is valid for button, but framer-motion types may not include it
               type="button"
               whileHover={{ scale: 1.05, boxShadow: "0 0 24px 2px #f23900cc" }}
@@ -172,21 +199,24 @@ const GamersPage: React.FC = () => {
                 cursor: "pointer",
                 transition: "all 0.2s",
               }}
-              onClick={() => {
-                setSelected(gamer);
-                setModalOpen(true);
-              }}
+              onClick={() => router.push(`/profile/${gamer.user_id}`)}
               className="focus:outline-none"
             >
               <img
-                src={getAvatar(gamer.twitter)}
+                src={gamer.profile_picture_url || getAvatar(gamer.twitter || '')}
                 alt={gamer.username}
                 className="w-16 h-16 rounded-full border-2 border-orange-400 mb-2 object-cover"
               />
               <h2 className="text-lg font-bold text-orange-300 mb-1 text-center">
                 {gamer.username}
               </h2>
-              <span className="text-xs text-orange-200 mb-1">@{gamer.twitter}</span>
+              <div className="mt-2 flex gap-2">
+                {(gamer.roles || []).map(r => (
+                  <span key={r} className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${r === 'admin' ? 'bg-yellow-500 text-white' : r === 'moderator' ? 'bg-blue-500 text-white' : 'bg-green-500 text-white'}`}>
+                    {r.replace('_', ' ')}
+                  </span>
+                ))}
+              </div>
             </motion.button>
           ))}
         </div>

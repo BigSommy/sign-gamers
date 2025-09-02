@@ -1,0 +1,203 @@
+"use client";
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from '@/contexts/AuthContext';
+import Link from 'next/link';
+
+type Tournament = {
+  id: string;
+  title: string;
+  description: string;
+  status: "upcoming" | "ongoing" | "past";
+  banner_url: string | null;
+  register_link: string | null;
+  registration_deadline?: string;
+  created_at?: string;
+  rules?: string | null;
+  game_id?: string;
+};
+
+type Registration = {
+  id: string;
+  username: string;
+  user_id: string;
+  x_handle?: string | null;
+  profile_picture_url?: string | null;
+  tournament_id: string;
+  created_at: string;
+};
+
+export default function TournamentRegisterPage() {
+  const params = useParams();
+  const id = typeof params?.id === "string" ? params.id : Array.isArray(params?.id) ? params.id[0] : undefined;
+  const { profile } = useAuth();
+  const [tournament, setTournament] = useState<Tournament | null>(null);
+  const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [registering, setRegistering] = useState(false);
+  const [registered, setRegistered] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!id) return;
+    const fetchData = async () => {
+      setLoading(true);
+      const { data: t } = await supabase.from("tournaments").select("*").eq("id", id).single();
+      setTournament(t);
+      
+      // Get registrations with user profiles joined
+      const { data: regs } = await supabase
+        .from("registrations")
+        .select(`
+          *,
+          profile:username (
+            user_id
+          )
+        `)
+        .eq("tournament_id", id);
+
+      console.log('Registration data with profiles:', regs);
+      
+      // Map the data to include user_id from the profile
+      setRegistrations(regs?.map(reg => ({
+        ...reg,
+        user_id: reg.profile?.user_id
+      })) || []);
+
+      if (profile && regs?.some((r: Registration) => r.username === profile.username)) {
+        setRegistered(true);
+      }
+      setLoading(false);
+    };
+    fetchData();
+  }, [id, profile]);
+
+  const handleRegister = async () => {
+    setError("");
+    if (!profile || !id) {
+      setError("You must be logged in to register.");
+      return;
+    }
+    setRegistering(true);
+
+    // First get the user's profile
+    const { data: userProfile } = await supabase
+      .from('user_profiles')
+      .select('id, user_id')
+      .eq('user_id', profile.id)
+      .single();
+
+    if (!userProfile) {
+      setError("Could not find your profile. Please make sure you have completed your profile setup.");
+      setRegistering(false);
+      return;
+    }
+
+    const { error: regError } = await supabase.from("registrations").insert([
+      {
+        username: profile.username,
+        user_id: userProfile.user_id,
+        x_handle: profile.twitter_handle || null,
+        profile_picture_url: profile.profile_picture_url || null,
+        tournament_id: id
+      }
+    ]);
+    if (!regError) {
+      setRegistered(true);
+      setRegistrations([
+        ...registrations,
+        {
+          id: "new",
+          username: profile.username,
+          user_id: userProfile.user_id,
+          x_handle: profile.twitter_handle || null,
+          profile_picture_url: profile.profile_picture_url || null,
+          tournament_id: id,
+          created_at: new Date().toISOString()
+        }
+      ]);
+    } else {
+      setError("Registration failed: " + regError.message);
+    }
+    setRegistering(false);
+  };
+
+  if (loading) return <main className="min-h-screen p-6 text-white">Loading...</main>;
+  if (!tournament) return <main className="min-h-screen p-6 text-white">Tournament not found.</main>;
+
+  return (
+    <main className="min-h-screen p-6 max-w-2xl mx-auto text-white">
+      {tournament.banner_url && (
+        <img src={tournament.banner_url} alt="Banner" className="w-full h-56 object-cover rounded-xl mb-4" />
+      )}
+      <h1 className="text-3xl font-bold mb-2 text-orange-400 font-['Exo_2']">{tournament.title}</h1>
+      <p className="mb-4 text-gray-300">{tournament.description}</p>
+      {tournament.registration_deadline && (
+        <p className="mb-2 text-orange-300 text-sm">Registration closes: {new Date(tournament.registration_deadline).toLocaleString()}</p>
+      )}
+
+      <div className="mb-6 bg-[#18181b] relative z-10 p-4 rounded-xl flex flex-col items-center">
+        {registered ? (
+          <div className="text-green-400 font-semibold mb-2">You are registered!</div>
+        ) : (
+          <button
+            onClick={handleRegister}
+            className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-6 rounded text-lg disabled:opacity-60"
+            disabled={registering || !profile}
+          >
+            {registering ? 'Registering...' : 'Register Now'}
+          </button>
+        )}
+        {error && <div className="text-red-400 text-sm mt-2">{error}</div>}
+      </div>
+
+      <div className="mb-6 bg-[#18181b] relative z-10 p-4 rounded-xl">
+        <h3 className="text-xl font-bold mb-2 text-orange-400 font-['Exo_2']">Registered Players</h3>
+        {registrations.length === 0 ? (
+          <p className="text-gray-400">No one has registered yet.</p>
+        ) : (
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {registrations.map((r) => (
+              <li key={r.id || r.username} className="flex items-center gap-3 bg-gray-900 rounded p-2">
+                {r.user_id ? (
+                  <Link href={`/profile/${r.user_id}/`} className="flex items-center gap-3 hover:opacity-80">
+                    {r.profile_picture_url ? (
+                      <img src={r.profile_picture_url} alt={r.username} className="w-10 h-10 rounded-full object-cover border-2 border-orange-400" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center border-2 border-orange-400">
+                        <span className="text-lg text-gray-400">{r.username[0].toUpperCase()}</span>
+                      </div>
+                    )}
+                    <div>
+                      <div className="font-semibold text-white hover:text-orange-400">{r.username}</div>
+                      {r.x_handle && (
+                        <a href={`https://x.com/${r.x_handle.replace(/^@/, '')}`} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline text-xs">@{r.x_handle.replace(/^@/, '')}</a>
+                      )}
+                    </div>
+                  </Link>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    {r.profile_picture_url ? (
+                      <img src={r.profile_picture_url} alt={r.username} className="w-10 h-10 rounded-full object-cover border-2 border-orange-400" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center border-2 border-orange-400">
+                        <span className="text-lg text-gray-400">{r.username[0].toUpperCase()}</span>
+                      </div>
+                    )}
+                    <div>
+                      <div className="font-semibold text-white">{r.username}</div>
+                      {r.x_handle && (
+                        <a href={`https://x.com/${r.x_handle.replace(/^@/, '')}`} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline text-xs">@{r.x_handle.replace(/^@/, '')}</a>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </main>
+  );
+}

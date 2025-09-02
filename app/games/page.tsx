@@ -1,4 +1,4 @@
-import { GameCard } from '@/components/GameCard';
+import CommunityGameCard from '@/components/CommunityGameCard';
 
 type Game = {
   id: string;
@@ -118,7 +118,7 @@ export default function GamesPage() {
         {games.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-1 sm:px-2 md:px-4">
             {games.map((game) => (
-              <GameCard key={game.id} game={game} />
+              <CommunityGameCard key={game.id} game={game} />
             ))}
           </div>
         ) : (

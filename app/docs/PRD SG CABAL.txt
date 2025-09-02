@@ -1,0 +1,163 @@
+Product Requirements Document (PRD): Gaming Community Website (Updated)
+I have updated the PRD to include the live stream integration feature that we discussed. The document now includes a new section to address this requirement.
+
+1. Introduction
+This document outlines the requirements for the new gaming community website, built to serve as the official hub for the SIGN PROTOCOL ecosystem. The website's primary goal is to foster a vibrant, competitive, and social community for a wide variety of gamers by providing tools for communication, tournament organization, and content sharing. This PRD will serve as the single source of truth for the development team.
+
+2. Project Goals
+Create a Central Hub: Provide a centralized platform for all members of the SIGN PROTOCOL gaming community.
+
+Increase Engagement: Drive user retention and activity through competitive tournaments, interactive chat features, and a rewarding points system.
+
+Showcase the Ecosystem: Promote the SIGN PROTOCOL brand and its values through seamless integration on the homepage and throughout the site.
+
+Empower the Community: Enable trusted users (Game Hosts) to take ownership of tournament creation and management.
+
+3. Target Audience
+Core User: Gamers of all ages and skill levels who are looking for a community to play with.
+
+Secondary User: Developers and enthusiasts of SIGN PROTOCOL who want to engage with the project's community.
+
+Key User Demographics: Individuals interested in competitive gaming, online social platforms, and community events.
+
+4. Features & Functionality
+A. Homepage (Public-Facing)
+
+Feature: A dynamic landing page.
+
+Requirements:
+
+Hero Section: A prominent, eye-catching section with a headline, call-to-action ("Join Now"), and a background that reflects the gaming theme.
+
+SIGN PROTOCOL Integration: A dedicated section explaining the connection to SIGN PROTOCOL, with a link to the official project site.
+
+Tournament Showcase: A section highlighting the next upcoming tournament with a countdown timer.
+
+Community Highlights: A preview of user-uploaded media ("previous games") and a snippet of the global leaderboard.
+
+Team Introduction: A small section introducing the team with a link to the full "Meet the Team" page.
+
+B. User Management & Profiles
+
+Feature: User registration, login, and comprehensive profiles.
+
+Requirements:
+
+Onboarding: A multi-step signup process including username, password, email verification, profile picture upload, bio, and an optional selection of games they play. A site tour will be offered.
+
+User Profile: A dedicated page with sections for:
+
+Main Info: Username, profile picture, bio.
+
+Games: Displaying selected games and allowing users to add their in-game IDs.
+
+Trophies: A display of tournament victories and "loser SBTs."
+
+Media: A gallery of user-uploaded images and videos from the community hub.
+
+Feature: Role-based access control.
+
+Requirements:
+
+Roles: Admin, Moderator, and Game Host.
+
+Permissions: Clear permissions for each role, with Admin having full control and Game Hosts being able to create and manage their assigned tournaments.
+
+C. Community & Communication
+
+Feature: General Hub/Chat Room.
+
+Requirements:
+
+A central chat for all community members.
+
+Voice Calls: The ability for users to create and join voice call channels.
+
+Chat Games: Implementation of simple, interactive games (e.g., trivia).
+
+Moderation: Tools for Admins/Mods to mute, ban, filter keywords, and review chat logs.
+
+D. Tournament System
+
+Feature: Tournament creation and registration.
+
+Requirements:
+
+Tournament Page: A centralized page to view and register for upcoming events.
+
+Creation: Game Hosts and Admins can create new tournaments, setting the game, start date, rules, and prizes. An optional registration cap can be set.
+
+Feature: Automated Bracket System (1v1).
+
+Requirements:
+
+Logic: The system will automatically pair players and advance the winner.
+
+Disqualification: If a player is a no-show, they are automatically disqualified, and their opponent advances.
+
+Result Validation: Players confirm results. If there's a dispute, a screenshot can be uploaded for Admin/Game Host review.
+
+Feature: Global Leaderboard.
+
+Requirements:
+
+A dynamic, site-wide leaderboard combining results from all tournaments.
+
+Point System: Tournament points will be awarded manually by Admins/Game Hosts (e.g., 1st: 100, 2nd: 75, 3rd: 50; all other participants: 20).
+
+Participation Reward: The last-place finisher receives a "loser SBT" and 10 points.
+
+Sorting: Users can sort the leaderboard by game, or by time period (weekly, monthly, all-time).
+
+E. Live Stream Integration
+
+Feature: Live stream sharing.
+
+Requirements:
+
+Profile Integration: Users should be able to link their Twitch, YouTube, or other streaming accounts to their profiles, and an embed of their live stream should be visible when they are broadcasting.
+
+Homepage/Dedicated Page: A section on the homepage or a dedicated page that showcases live streams from active community members.
+
+F. Design & UX
+
+Feature: UI/UX standards.
+
+Requirements:
+
+Theme: Orange as the primary color, with black/white as secondary colors.
+
+Modes: A toggle for light and dark modes.
+
+Accessibility: All design choices should consider accessibility best practices.
+
+5. User Stories
+As a new user, I want to sign up and get a quick tour so I can understand what the community is all about.
+
+As a gamer, I want to join a tournament and have a clear bracket system so I can easily track my progress.
+
+As a Game Host, I want to create a new tournament and set a prize so I can organize events for my favorite games.
+
+As a community member, I want to see my rank on the global leaderboard so I can track my performance against others.
+
+As a user, I want to see recently uploaded media and upcoming tournaments on the homepage so I can quickly see what's happening.
+
+As a user, I want to see the games other members play so I can find teammates for a specific game.
+
+As a streamer, I want to link my streaming account to my profile so that the community can watch my broadcasts.
+
+6. Technical Requirements
+Backend: A robust and scalable server architecture to handle user traffic and tournament data.
+
+Frontend: A modern, responsive web application that works on both desktop and mobile devices.
+
+Database: A reliable database to store user data, tournament results, and community content.
+
+7. Success Metrics
+User Growth: Number of new user registrations per month.
+
+User Engagement: Number of active users, messages sent in the hub, and media uploads.
+
+Tournament Participation: Number of tournaments created and the number of users registered per tournament.
+
+Retention Rate: Percentage of users who return to the site after their first visit.

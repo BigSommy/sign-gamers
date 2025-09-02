@@ -1,0 +1,124 @@
+Homepage Wireframe Plan
+1. Hero Section
+
+Layout: A full-width, clean section at the top.
+
+Content: The main headline and a prominent "Join Now" button.
+
+Animations: The headline and button could fade or slide in with a subtle animation when the page loads, drawing the user's eye to the main call-to-action.
+
+2. Introduction to SIGN PROTOCOL
+
+Layout: A clean, two-column section.
+
+Content: A brief, digestible explanation of SIGN PROTOCOL on one side, with the logo and a link to their site.
+
+Animations: As the user scrolls to this section, the two columns could slide in from opposite sides, creating a smooth and professional transition.
+
+3. Why Join? Key Features Showcase
+
+Layout: A grid-based layout with distinct cards for each feature.
+
+Content:
+
+Card 1 (Upcoming Tournaments): A dynamic card showing the next tournament with a countdown.
+
+Card 2 (Community Hubs): A card with icons of popular games.
+
+Card 3 (Meet the Team): A card with a few team member photos, linking to the full page.
+
+Animations: The cards could appear with a gentle "pop-in" or fade-up animation as the user scrolls, creating a fun and interactive experience.
+
+4. Community Highlights (User-Generated Content)
+
+Layout: A full-width carousel or a masonry-style grid.
+
+Content: Recently uploaded media (screenshots/clips).
+
+Animations: The images and videos could appear in the grid or scroll smoothly into view as the user enters the section, giving the impression of a vibrant, active community.
+
+5. Final Call to Action
+
+Layout: A simple, full-width banner.
+
+Content: A final, bold statement and a "Join Now" button to capture users who have scrolled to the bottom.
+
+Animations: This banner could slide up from the bottom with a simple animation to ensure it catches the user's attention.
+
+Mobile Responsiveness: All of these sections will be designed with a "mobile-first" approach. This means the layouts will gracefully stack and resize for smaller screens, ensuring the experience is seamless on any device.
+
+
+Onboarding Process Wireframe Plan
+Step 1: Sign Up / Login Page
+
+Purpose: The entry point for all new and returning users.
+
+Layout: A clean, minimal page with a clear visual distinction between "Sign Up" and "Log In."
+
+Content:
+
+Sign Up: Fields for email, username, and password.
+
+Log In: Fields for username/email and password.
+
+Visuals: A clean, subtle background image or animation that hints at the gaming theme.
+
+Call to Action: A prominent "Create Account" or "Log In" button using the primary orange color.
+
+Step 2: Gamer Profile Setup (Step-by-Step)
+
+Purpose: To gather essential user information in a non-overwhelming way. We will break this into a few sequential screens.
+
+Screen 2a: Profile Basics
+
+Layout: A simple, focused screen with a clear progress indicator (e.g., "Step 1 of 3").
+
+Content:
+
+A field to upload a profile picture.
+
+A field for the user's bio (with a character limit).
+
+A clear "Next" button.
+
+Screen 2b: Game Selection
+
+Layout: A screen with a list of game genres and specific games.
+
+Content:
+
+A checklist or a series of interactive cards for "Game Genres You Love."
+
+A list of games from our "Games We Play" list. Users can select multiple games. This will be the "optional" part of the signup process.
+
+A text field where users can add their in-game IDs for the selected games.
+
+A "Next" or "Skip" button.
+
+Screen 2c: Finalize & Welcome
+
+Layout: A celebratory screen.
+
+Content: A friendly welcome message like "Welcome to the Community!"
+
+Call to Action: A button to "Start Your Site Tour" or "Go to the Hub."
+
+Step 3: Quick Site Tour
+
+Purpose: To guide new users through the key features.
+
+Layout: A series of short, interactive tooltips or an overlay that highlights different parts of the UI.
+
+Content:
+
+A tooltip pointing to the General Hub, with a brief description.
+
+A tooltip pointing to the Tournament Page, explaining how to register.
+
+A tooltip pointing to the User Profile icon, explaining that this is where their information and trophies are.
+
+A "Finish Tour" or "Got It" button.
+
+Mobile Responsiveness: All of these screens will be designed to be simple, with large buttons and clear text, ensuring the process is easy to navigate on a mobile device.
+
+

@@ -1,108 +1,140 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import React, { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import LeaderboardAdmin from './leaderboard'
-import MediaUpload from './MediaUpload'
+import { FaUsers, FaCrown, FaShieldAlt, FaGamepad, FaUser, FaSearch, FaEdit } from 'react-icons/fa'
+import { UserProfile } from '@/types/database'
 import BlogAdmin from './BlogAdmin'
-import LoserAdmin from './LoserAdmin';
-import { games } from '../gamesData'
+import MediaUpload from './MediaUpload'
 
-
-type Tournament = {
-  id: string
-  title: string
-  description: string
-  status: 'upcoming' | 'ongoing' | 'past'
-  banner_url: string | null
-  register_link: string | null
-  registration_deadline?: string | null
-  game_id: string;
+interface UserWithRoles extends UserProfile {
+  roles: string[]
+  email?: string
 }
 
-type Registration = {
-  id: string;
-  username: string;
-  game_id: string;
-  x_handle?: string;
-  created_at: string;
-};
-type BracketMatch = {
-  player1: { username: string };
-  player2: { username: string } | null;
-  winner: string | null;
-};
-
-
 export default function AdminPage() {
-  // All hooks and functions must be at the top, before any return
-  const [auth, setAuth] = useState(false);
-  const [passInput, setPassInput] = useState('');
-  const [tournaments, setTournaments] = useState<Tournament[]>([]);
-  const [form, setForm] = useState({
-    title: '',
-    description: '',
-    status: 'upcoming',
-    banner_url: '',
-    register_link: '',
-    registration_deadline: '',
-    game_id: '',
-  });
-  const [loading, setLoading] = useState(false);
-  const bannerInputRef = useRef<HTMLInputElement>(null);
+  // Simple password gate (public page)
+  const [auth, setAuth] = useState(false)
+  const [passInput, setPassInput] = useState('')
 
-  // Define loadTournaments before useEffect uses it
-  const loadTournaments = async () => {
-    const { data } = await supabase.from('tournaments').select('*').order('created_at', { ascending: false });
-    console.log('Fetched tournaments:', data);
-    setTournaments(data || []);
-  };
-
-
-  // All hooks must be at the top, before any return
-  useEffect(() => {
-    const storedAuth = localStorage.getItem('sg_admin_auth');
-    if (storedAuth === 'true') setAuth(true);
-  }, []);
+  const [users, setUsers] = useState<UserWithRoles[]>([])
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedUser, setSelectedUser] = useState<UserWithRoles | null>(null)
+  const [isEditing, setIsEditing] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    loadTournaments();
-  }, []);
+    const stored = typeof window !== 'undefined' ? localStorage.getItem('sg_admin_auth') : null
+    if (stored === 'true') setAuth(true)
+  }, [])
 
   useEffect(() => {
-    if (auth) loadTournaments();
-  }, [auth]);
+    if (auth) fetchUsers()
+  }, [auth])
 
-  useEffect(() => {
-    localStorage.setItem('sg_admin_auth', auth ? 'true' : 'false');
-  }, [auth]);
-
-  // Secure password check via API
   const checkAuth = async () => {
     try {
       const res = await fetch('/api/admin-auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password: passInput })
-      });
-      const data = await res.json();
+      })
+      const data = await res.json()
       if (data.success) {
-        setAuth(true);
-        localStorage.setItem('sg_admin_auth', 'true');
+        setAuth(true)
+        localStorage.setItem('sg_admin_auth', 'true')
       } else {
-        alert('Wrong password');
+        alert('Wrong password')
       }
-    } catch (err) {
-      alert('Error connecting to server.');
+    } catch {
+      alert('Error connecting to server.')
     }
   }
 
-  // Show password form if not authed
+  const fetchUsers = async () => {
+    try {
+      setIsLoading(true)
+      const res = await fetch('/api/admin/users')
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data?.error || 'Failed to load users')
+      }
+      const profiles: any[] = data.profiles || []
+      const roles: any[] = data.roles || []
+      // Group roles by user_id for fast lookup
+      const rolesByUserId: Record<string, string[]> = {}
+      for (const r of roles) {
+        if (!rolesByUserId[r.user_id]) rolesByUserId[r.user_id] = []
+        rolesByUserId[r.user_id].push(r.role)
+      }
+      const usersWithRoles: UserWithRoles[] = profiles.map((p) => ({
+        ...(p as any),
+        roles: rolesByUserId[p.user_id] || []
+      }))
+      setUsers(usersWithRoles)
+    } catch (error) {
+      console.error('Error fetching users:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const updateUserRole = async (userId: string, role: string, action: 'add' | 'remove') => {
+    try {
+      const res = await fetch('/api/admin/roles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, user_id: userId, role })
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        console.error('Error updating role via server:', data)
+        alert('Failed to update role: ' + (data?.error?.message || JSON.stringify(data)))
+        return
+      }
+      fetchUsers()
+    } catch (error) {
+      console.error('Error updating user role:', error)
+    }
+  }
+
+  const getRoleIcon = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return <FaCrown className="text-yellow-400" />
+      case 'moderator':
+        return <FaShieldAlt className="text-blue-400" />
+      case 'game_host':
+        return <FaGamepad className="text-green-400" />
+      default:
+        return <FaUser className="text-gray-400" />
+    }
+  }
+
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return 'bg-yellow-500 text-white'
+      case 'moderator':
+        return 'bg-blue-500 text-white'
+      case 'game_host':
+        return 'bg-green-500 text-white'
+      default:
+        return 'bg-gray-500 text-white'
+    }
+  }
+
+  const filteredUsers = users.filter(u =>
+    u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    u.bio?.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  // Password gate
   if (!auth) {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center bg-[#18181b] text-white">
         <form
-          onSubmit={e => { e.preventDefault(); checkAuth(); }}
+          onSubmit={(e) => { e.preventDefault(); checkAuth(); }}
           className="bg-[#222] p-8 rounded-2xl shadow-2xl flex flex-col items-center gap-4 border border-orange-400/30"
         >
           <h2 className="text-2xl font-bold text-orange-400 mb-2">Admin Login</h2>
@@ -121,357 +153,135 @@ export default function AdminPage() {
           </button>
         </form>
       </main>
-    );
-  }
-
-
-
-  const handleSubmit = async () => {
-    setLoading(true);
-    // Convert registration_deadline to UTC ISO string if present
-    let deadline = form.registration_deadline;
-    if (deadline) {
-      const localDate = new Date(deadline);
-      deadline = new Date(localDate.getTime() - localDate.getTimezoneOffset() * 60000).toISOString();
-    }
-    const { error } = await supabase.from('tournaments').insert([{ ...form, status: 'upcoming', registration_deadline: deadline }])
-    if (!error) {
-      alert('Tournament added!')
-      setForm({ title: '', description: '', status: '', banner_url: '', register_link: '', registration_deadline: '', game_id: '' })
-      loadTournaments()
-    } else {
-      alert('Error: ' + error.message)
-    }
-    setLoading(false);
-  }
-
-  const deleteTournament = async (id: string) => {
-    if (confirm('Are you sure?')) {
-      await supabase.from('tournaments').delete().eq('id', id)
-      loadTournaments()
-    }
-  }
-
-  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const fileExt = file.name.split('.').pop();
-    const filePath = `banners/${Date.now()}.${fileExt}`;
-    const { data, error } = await supabase.storage.from('banners').upload(filePath, file);
-    if (error) {
-      alert('Upload failed: ' + error.message);
-      return;
-    }
-    const { data: urlData } = supabase.storage.from('banners').getPublicUrl(filePath);
-    setForm({ ...form, banner_url: urlData.publicUrl });
-  };
-
-
-
-
-  // Bracket management for tournaments
-  function BracketAdmin({ tournament }: { tournament: { id: string; title: string; status: string;registration_deadline?: string | null } }) {
-    const [registrations, setRegistrations] = useState<Registration[]>([]);
-    const [bracket, setBracket] = useState<BracketMatch[]>([]);
-    const [round, setRound] = useState(1);
-    const [loading, setLoading] = useState(true);
-    const [status, setStatus] = useState(tournament.status);
-    const [bracketId, setBracketId] = useState<string | null>(null);
-
-    // Fetch registrations and bracket state
-    useEffect(() => {
-      if (!tournament?.id) return;
-      const fetchData = async () => {
-        const { data: regs } = await supabase.from('registrations').select('*').eq('tournament_id', tournament.id);
-        setRegistrations(regs || []);
-        // Fetch bracket state
-        const { data: bracketRows } = await supabase.from('tournament_brackets').select('*').eq('tournament_id', tournament.id).single();
-        if (bracketRows) {
-          setBracket(bracketRows.bracket_json || []);
-          setRound(bracketRows.round || 1);
-          setBracketId(bracketRows.id);
-        } else if (regs && regs.length > 0) {
-          // Generate and save new bracket if none exists
-          const shuffled = [...regs].sort(() => Math.random() - 0.5);
-          const pairs: BracketMatch[] = [];
-          for (let i = 0; i < shuffled.length; i += 2) {
-            pairs.push({
-              player1: { username: shuffled[i].username },
-              player2: shuffled[i + 1] ? { username: shuffled[i + 1].username } : null,
-              winner: null,
-            });
-          }
-          const { data: insertData } = await supabase.from('tournament_brackets').insert({
-            tournament_id: tournament.id,
-            bracket_json: pairs,
-            round: 1
-          }).select().single();
-          setBracket(pairs);
-          setRound(1);
-          setBracketId(insertData?.id || null);
-        }
-        setLoading(false);
-      };
-      fetchData();
-    }, [tournament]);
-
-    // Move tournament to 'ongoing' when registration deadline passes
-    useEffect(() => {
-      if (status === 'upcoming' && tournament.registration_deadline) {
-        const deadline = new Date(tournament.registration_deadline).getTime();
-        const now = Date.now();
-        if (now >= deadline) {
-          supabase.from('tournaments').update({ status: 'ongoing' }).eq('id', tournament.id);
-          setStatus('ongoing');
-        }
-      }
-    }, [status, tournament]);
-
-    // Save bracket state to Supabase
-    const saveBracket = async (nextBracket: BracketMatch[], nextRound: number) => {
-      if (!bracketId) return;
-      await supabase.from('tournament_brackets').update({ bracket_json: nextBracket, round: nextRound }).eq('id', bracketId);
-    };
-
-    const pickWinner = async (matchIdx: number, winnerUsername: string) => {
-      const updated = [...bracket];
-      updated[matchIdx].winner = winnerUsername;
-      setBracket(updated);
-      await saveBracket(updated, round);
-      // Add to leaderboard if final round
-      if (updated.length === 1 && updated[0].winner) {
-        await supabase.from('leaderboard').upsert(
-          { username: updated[0].winner, score: 100, tournament_id: tournament.id },
-          { onConflict: 'username,tournament_id' }
-        );
-        // Move tournament to 'past'
-        await supabase.from('tournaments').update({ status: 'past' }).eq('id', tournament.id);
-        setStatus('past');
-      }
-    };
-
-    const advanceRound = async () => {
-      const winners = bracket.map((m) => m.winner).filter((w): w is string => !!w);
-      const nextPairs: BracketMatch[] = [];
-      for (let i = 0; i < winners.length; i += 2) {
-        nextPairs.push({
-          player1: { username: winners[i] },
-          player2: winners[i + 1] ? { username: winners[i + 1] } : null,
-          winner: null,
-        });
-      }
-      setBracket(nextPairs);
-      setRound(r => r + 1);
-      await saveBracket(nextPairs, round + 1);
-    };
-
-    if (loading) return <div>Loading bracket...</div>;
-    if (!registrations.length) return <div>No registrations for this tournament.</div>;
-
-    return (
-      <div className="mb-10 super-glass p-6 md:p-8 rounded-2xl shadow-xl border border-orange-300/20">
-        <h2 className="text-2xl font-bold text-orange-400 mb-3 font-['Exo_2'] drop-shadow">Bracket for <span className="text-orange-200">{tournament.title}</span></h2>
-        <div className="mb-4 text-lg font-semibold text-orange-300">Round <span className="bg-orange-900 text-orange-200 px-3 py-1 rounded-full">{round}</span></div>
-        <ul className="space-y-4">
-          {bracket.map((match, i) => (
-            <li key={i} className="flex flex-col md:flex-row gap-3 md:gap-6 items-center bg-black/30 border border-orange-400/10 rounded-xl px-4 py-3 shadow-md transition-all">
-              <div className="flex-1 flex flex-col md:flex-row gap-2 md:gap-4 items-center">
-                <span className="font-bold text-base md:text-lg text-orange-300 bg-orange-900/40 px-3 py-1 rounded-lg shadow">{match.player1.username}</span>
-                <span className="text-gray-400 font-bold text-lg">vs</span>
-                {match.player2 ? (
-                  <span className="font-bold text-base md:text-lg text-orange-300 bg-orange-900/40 px-3 py-1 rounded-lg shadow">{match.player2.username}</span>
-                ) : (
-                  <span className="italic text-gray-500">(bye)</span>
-                )}
-              </div>
-              <div className="flex gap-2 items-center">
-                {!match.winner && match.player2 && (
-                  <>
-                    <button onClick={() => pickWinner(i, match.player1.username)} className="super-btn bg-green-600/90 hover:bg-green-400 text-white font-bold px-4 py-2 rounded-lg shadow transition-all">✔ {match.player1.username}</button>
-                    <button onClick={() => pickWinner(i, match.player2!.username)} className="super-btn bg-green-600/90 hover:bg-green-400 text-white font-bold px-4 py-2 rounded-lg shadow transition-all">✔ {match.player2.username}</button>
-                  </>
-                )}
-                {match.winner && (
-                  <span className="ml-2 text-green-400 font-bold text-base flex items-center gap-1">🏅 Winner: <span className="underline underline-offset-4">{match.winner}</span></span>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
-        {bracket.every(m => m.winner || !m.player2) && bracket.length > 1 && (
-          <button onClick={advanceRound} className="super-btn mt-6 bg-orange-500 hover:bg-gradient-to-r hover:from-orange-400 hover:to-yellow-400 text-black px-6 py-3 text-lg shadow-lg">Advance to Next Round</button>
-        )}
-        {bracket.length === 1 && bracket[0].winner && (
-          <div className="mt-8 text-3xl md:text-4xl text-orange-400 font-extrabold flex items-center gap-3 animate-super-float">
-            🏆 <span className="drop-shadow-xl">Winner: <span className="text-yellow-300 underline underline-offset-4">{bracket[0].winner}</span></span>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // Add a helper to get game data by id
-  function getGameById(id: string) {
-    return games.find(g => g.id === id);
-  }
-
-  // Helper function to format date in UTC+1
-  function formatUTCDate(dateString: string | null): string {
-    if (!dateString) return 'No deadline';
-    const date = new Date(dateString);
-    // Add 1 hour to convert from UTC to UTC+1
-    const utcPlusOne = new Date(date.getTime() + (60 * 60 * 1000));
-    return utcPlusOne.toLocaleString('en-GB', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-      timeZone: 'UTC' // Keep in UTC since we've already added the hour
-    });
+    )
   }
 
   return (
-    <main className="min-h-screen p-4 md:p-8 max-w-4xl mx-auto text-white super-fade-in">
-      <h1 className="text-3xl md:text-4xl font-extrabold text-orange-400 mb-8 tracking-tight font-['Exo_2'] drop-shadow-lg">Admin Dashboard</h1>
-      {/* Media upload for admins */}
-      <MediaUpload />
-      <BlogAdmin />
-      {/* Tournament creation form */}
-      <div className="super-glass p-6 md:p-8 mb-8 shadow-xl border border-orange-400/20">
-        <h2 className="text-lg font-bold mb-2 text-orange-400">Create Tournament</h2>
-        {/* Game selection dropdown only */}
-        <select
-          className="w-full p-2 mb-2 rounded bg-[#222]"
-          value={form.game_id || ''}
-          onChange={e => {
-            const selected = games.find(g => g.id === e.target.value);
-            if (selected) {
-              setForm({
-                ...form,
-                game_id: selected.id,
-                title: selected.name,
-                description: selected.description,
-                banner_url: selected.banner,
-                // Optionally set other fields
-              });
-            } else {
-              setForm({ ...form, game_id: '' });
-            }
-          }}
-        >
-          <option value="">Select Game</option>
-          {games.map(g => (
-            <option key={g.id} value={g.id}>{g.name}</option>
-          ))}
-        </select>
-        {/* Show other fields only after game is selected */}
-        {form.game_id && (
-          <>
-            <div className="flex items-center gap-4 mb-4">
-              <img src={getGameById(form.game_id)?.logo} alt="logo" className="w-14 h-14 rounded-xl bg-black border-2 border-orange-400 shadow-lg" />
-              <img src={getGameById(form.game_id)?.banner} alt="banner" className="w-40 h-16 rounded-xl bg-black border-2 border-orange-400 object-cover shadow-md" />
+    <div className="min-h-screen bg-[#18181b] pt-20 pb-8">
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
+            <FaCrown className="text-yellow-400" />
+            Admin Panel
+          </h1>
+          <p className="text-gray-400">Manage users and roles</p>
+        </div>
+
+        <div className="bg-[#222] rounded-xl shadow-2xl p-6 border border-orange-400/20 mb-8">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <FaSearch className="text-gray-400" />
             </div>
             <input
-              placeholder="Title"
-              className="w-full p-2 mb-2 rounded bg-[#222]"
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
+              type="text"
+              placeholder="Search users by username or bio..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 rounded-lg bg-[#18181b] border border-gray-600 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all"
             />
-            <textarea
-              placeholder="Description"
-              className="w-full p-2 mb-2 rounded bg-[#222]"
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-            />
-            {/* If game type is 'room', require room code/link */}
-            {getGameById(form.game_id)?.type === 'room' && (
-              <input
-                placeholder="Room Link or Code (required)"
-                className="w-full p-2 mb-2 rounded bg-[#222]"
-                value={form.register_link}
-                onChange={(e) => setForm({ ...form, register_link: e.target.value })}
-                required
-              />
-            )}
-            {/* If game type is 'pvp', allow optional register link */}
-            {getGameById(form.game_id)?.type === 'pvp' && (
-              <input
-                placeholder="Register Link (optional)"
-                className="w-full p-2 mb-2 rounded bg-[#222]"
-                value={form.register_link}
-                onChange={(e) => setForm({ ...form, register_link: e.target.value })}
-              />
-            )}
-            <input
-              type="datetime-local"
-              className="w-full p-2 mb-2 rounded bg-[#222]"
-              value={form.registration_deadline}
-              onChange={(e) => setForm({ ...form, registration_deadline: e.target.value })}
-              required
-              placeholder="Registration Deadline"
-            />
+          </div>
+        </div>
+
+        <div className="bg-[#222] rounded-xl shadow-2xl border border-orange-400/20 overflow-hidden">
+          <div className="p-6 border-b border-gray-600">
+            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+              <FaUsers className="text-orange-400" />
+              Users ({filteredUsers.length})
+            </h2>
+          </div>
+
+          {isLoading ? (
+            <div className="p-6 text-gray-300">Loading users...</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-[#18181b]">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">User</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Roles</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Joined</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-600">
+                  {filteredUsers.map((u) => (
+                    <tr key={u.user_id} className="hover:bg-[#18181b] transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="w-10 h-10 bg-orange-400/20 rounded-full flex items-center justify-center">
+                            <FaUser className="text-orange-400" />
+              </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-white">{u.username}</div>
+                            <div className="text-sm text-gray-400">{u.bio ? u.bio.substring(0, 50) + '...' : 'No bio'}</div>
+              </div>
+          </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex flex-wrap gap-2">
+                          {u.roles.map((role) => (
+                            <span key={role} className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleColor(role)}`}>
+                              {getRoleIcon(role)}
+                              <span className="ml-1">{role}</span>
+                            </span>
+                          ))}
+                          {u.roles.length === 0 && <span className="text-gray-400 text-sm">No roles</span>}
+            </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">{u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
             <button
-              onClick={handleSubmit}
-              className="super-btn bg-orange-500 hover:bg-gradient-to-r hover:from-orange-400 hover:to-yellow-400 text-black px-6 py-3 text-lg mt-2 disabled:opacity-60"
-              disabled={loading}
+                          onClick={() => { setSelectedUser(u); setIsEditing(true) }}
+                          className="text-orange-400 hover:text-orange-300 mr-3"
             >
-              {loading ? 'Saving...' : 'Save Tournament'}
+                          <FaEdit className="text-sm" />
             </button>
-          </>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
         )}
       </div>
 
-      <div className="space-y-6">
-        <h2 className="text-2xl md:text-3xl font-bold text-orange-400 mb-4 font-['Exo_2'] drop-shadow">🗂 Existing Tournaments</h2>
-        {tournaments.map((t) => (
-          <div key={t.id} className="super-glass p-5 md:p-7 rounded-2xl flex flex-col md:flex-row md:items-center md:justify-between mb-6 transition-transform duration-300 hover:scale-[1.02] hover:shadow-orange-400/40 border border-orange-400/20 group shadow-lg">
-            <div className="flex-1">
-              <p className="font-bold text-xl md:text-2xl text-orange-400 mb-1 font-['Exo_2']">{t.title}</p>
-              <div className="flex flex-wrap gap-2 items-center mb-2">
-                <span className={`px-3 py-1 rounded-full text-xs font-bold ${t.status === 'upcoming' ? 'bg-orange-900 text-orange-300' : t.status === 'ongoing' ? 'bg-green-900 text-green-300' : 'bg-gray-700 text-gray-300'}`}>{t.status.toUpperCase()}</span>
-                <span className="text-xs text-gray-400">Deadline: <span className="text-orange-300 font-semibold">{formatUTCDate(t.registration_deadline ?? null)} (UTC+1)</span></span>
-                <span className="text-xs text-gray-400">Game: <span className="text-orange-200 font-semibold">{t.game_id}</span></span>
-              </div>
-              <p className="text-sm text-gray-300 mb-2">{t.description}</p>
-              <p className="text-xs text-gray-400 mb-2">Reg Link: <span className="text-blue-300 break-all">{t.register_link}</span></p>
+        {/* Blog and Media admin tools */}
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <BlogAdmin />
+          <MediaUpload />
+        </div>
+
+        {isEditing && selectedUser && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-[#222] rounded-xl shadow-2xl p-6 border border-orange-400/20 max-w-md w-full mx-4">
+              <h3 className="text-lg font-bold text-white mb-4">Manage Roles: {selectedUser.username}</h3>
+              <div className="space-y-4">
+                {['admin', 'moderator', 'game_host', 'user'].map((role) => (
+                  <div key={role} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {getRoleIcon(role)}
+                      <span className="text-white capitalize">{role}</span>
             </div>
-            <div className="flex flex-col gap-2 items-end min-w-[120px]">
-              {(t.status === 'upcoming' || t.status === 'ongoing') && (
                 <button
-                  onClick={() => setForm({
-                    title: t.title,
-                    description: t.description,
-                    status: t.status,
-                    banner_url: t.banner_url || '',
-                    register_link: t.register_link || '',
-                    registration_deadline: t.registration_deadline || '',
-                    game_id: t.game_id || '',
-                  })}
-                  className="super-btn text-xs text-blue-700 hover:text-white bg-blue-200/30 hover:bg-blue-400/80 px-4 py-2 mb-1"
-                  title="Edit"
-                >
-                  Edit
-                </button>
-              )}
-              <button
-                onClick={() => deleteTournament(t.id)}
-                className="super-btn text-xs text-red-500 hover:text-white bg-red-200/30 hover:bg-red-400/80 px-4 py-2"
-                title="Delete"
-              >
-                ✕
+                      onClick={() => {
+                        const hasRole = selectedUser.roles.includes(role)
+                        updateUserRole(selectedUser.user_id, role, hasRole ? 'remove' : 'add')
+                      }}
+                      className={`px-3 py-1 rounded text-sm font-medium transition-colors ${selectedUser.roles.includes(role) ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-green-500 hover:bg-green-600 text-white'}`}
+                    >
+                      {selectedUser.roles.includes(role) ? 'Remove' : 'Add'}
               </button>
-            </div>
-            {/* Bracket admin for this tournament */}
-            <BracketAdmin tournament={t} />
           </div>
         ))}
       </div>
-
-      <LoserAdmin />
-      <LeaderboardAdmin />
-    </main>
+              <div className="mt-6 flex gap-3">
+                <button onClick={() => { setIsEditing(false); setSelectedUser(null) }} className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Close</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   )
-  
 }
+

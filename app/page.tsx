@@ -485,10 +485,6 @@ export default function Home() {
                     <summary className="cursor-pointer font-semibold text-orange-300">Where can I get support?</summary>
                     <div className="mt-1 text-sm text-gray-100">Hop into our Discord or DM us on Twitter/X for Help, Questions, Partnerships, Collaborations, or just to say hi!</div>
                   </details>
-                  <details className="bg-[#111827] rounded-lg p-2">
-                    <summary className="cursor-pointer font-semibold text-orange-300">How to Get the Uniue Code?</summary>
-                    <div className="mt-1 text-sm text-gray-100">Just click on the "Register Game IDs", then submit your X handle and Game ID for the games you play. You will recieve a code afterwards. This code will be used to EDIT your GAME DATA in the future and to register for tournaments. This will only be used for tournaments with 1v1 matches</div>
-                  </details>
                 </div>
               </motion.div>
             </div>

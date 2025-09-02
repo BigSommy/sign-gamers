@@ -1,0 +1,83 @@
+Consolidated UI/UX Design & Front-End Specifications
+This document combines all the wireframe plans and front-end specifications we have developed for the SIGN PROTOCOL gaming community website. It serves as a comprehensive guide for the development team to build a user-friendly and visually engaging platform.
+
+1. Overall Design & Theming
+Primary Color: Vibrant Orange (#FF8C00).
+
+Secondary Colors:
+
+Dark Mode: Dark Gray (#121212).
+
+Light Mode: Off-White (#F5F5F5).
+
+Typography: A clean, modern sans-serif font family (e.g., Lato, Poppins, or Inter) for all text. Headlines will be bold and in the primary orange color.
+
+Responsiveness: All components must be fully responsive, utilizing a mobile-first approach. Layouts will gracefully stack on smaller screens.
+
+Animations: Subtle scroll-based animations will be used for key sections of the homepage to add a modern and polished feel. This includes fade-in and slide-in effects for content blocks as they enter the viewport.
+
+2. Homepage & Landing Page
+Hero Section: A full-width, dynamic section with a catchy headline, a prominent "Join Now" CTA button, and a gaming-themed background. The headline and button will have a fade-in animation.
+
+SIGN PROTOCOL Section: A two-column layout that introduces the protocol. On scroll, the two columns will slide in from opposite sides.
+
+Key Features Showcase: A grid-based layout with distinct cards for upcoming tournaments, community hubs, and a "Meet the Team" snippet. The cards will have a subtle "pop-in" animation.
+
+Community Highlights: A live media feed of user-uploaded content in a responsive carousel or grid, with a smooth scroll effect.
+
+Final CTA: A final, full-width banner with a "Join Now" button that slides up from the bottom of the page.
+
+3. Onboarding Process
+Layout: A multi-step process with a progress indicator at the top.
+
+Step 1: Sign Up/Login: A clean, minimal page for new and returning users.
+
+Step 2: Gamer Profile Setup:
+
+Profile Basics: A screen to upload a profile picture and add a bio.
+
+Game Selection: A screen with interactive cards for game genres and a checklist for specific games. Users can add their in-game IDs here.
+
+Step 3: Quick Site Tour: An overlay with clean tooltips that highlight key UI elements like the community hub and tournament page.
+
+4. User Profile
+Profile Header: A horizontal layout with the user's avatar, username, bio, and X handle.
+
+Tabbed Navigation: A horizontal menu with tabs for "Games," "Trophies," and "Media."
+
+"Games" Tab: A grid of cards displaying the games a user plays, their in-game IDs, and links to the respective hubs.
+
+"Trophies" Tab: A grid of badges or icons showcasing tournament victories and "loser SBTs."
+
+"Media" Tab: A responsive grid of thumbnails for the user's uploaded screenshots and videos.
+
+5. Tournament System
+Main Tournament Hub: A central page with dedicated sections for "Upcoming Tournaments" and "Past Tournaments." It will feature a prominent snippet of the Global Leaderboard.
+
+Tournament Registration: A simple modal window with a summary of the tournament and a "Confirm Registration" button.
+
+Tournament Details: A comprehensive page with a clear header, an automated and interactive bracket system, and a mini-leaderboard for the specific event.
+
+Global Leaderboard (Dedicated Page): A full-page dynamic table with sortable columns (Rank, Username, Points) and filters for games and time periods.
+
+Reward Claim Page: A secure page for winners to claim prizes and for participants to claim their "loser SBTs."
+
+6. Community & Communication Hub
+Layout: A multi-column desktop layout that collapses to a single column on mobile.
+
+Content:
+
+Main Chat Window: A real-time chat with a message history, timestamps, and user avatars.
+
+Voice Call Channels: A list of active voice call channels with the ability to create new ones.
+
+Chat Games: Simple, interactive games like trivia will be integrated directly into the chat flow.
+
+Front-End Integration: The chat will use a WebSocket-based solution for real-time messaging, and voice calls will use a WebRTC-based solution for low latency.
+
+7. Live Stream & Team Pages
+Live Streams Page (Dedicated): A central hub for all active community streams. It will feature a prominent embedded video player and a grid of other live streams.
+
+User Profile (Stream Integration): A dedicated section on the user's profile with a "LIVE" badge and an embedded player when they are streaming.
+
+Meet the Team Page: A clean, responsive grid of cards, with each card displaying a team member's photo, name, role, and a link to their X handle.
