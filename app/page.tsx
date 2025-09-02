@@ -377,8 +377,6 @@ export default function Home() {
               { name: 'SOMI', handle: 'bigsommy_', role: 'Developer', desc: 'Dev, Gamer, Sign Tech-bro' },
               { name: 'Thoth', handle: 'Trojan_Bus1', role: 'Partner', desc: 'Game Host, Support, Sensei' },
               { name: 'Biggids', handle: '_biggids', role: 'Spectator', desc: 'Support, Vibes, Community' },
-              { name: 'Truth', handle: 'TruthOnchained', role: 'Spectator', desc: 'Support, Gamer, Truth of Sign' },
-              { name: 'Tajudeen', handle: 'Tajudeen_10', role: 'Spectator', desc: 'King Of Sign, Gamer, Suport' },
             ].map((c, i) => 
             (<div key={c.handle} className="glass rounded-2xl shadow-2xl bg-[#18181b] border border-orange-600 p-1 sm:p-2 flex flex-col items-center text-center min-w-0 transition-transform duration-300 hover:scale-105" data-aos="fade-up" data-aos-duration="800" data-aos-delay={i * 120}>
                 <img src={`https://unavatar.io/twitter/${c.handle}`} alt={c.name} className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 rounded-full mb-1 sm:mb-2 md:mb-2 border-2 border-orange-400 object-cover super-fade-in" />
